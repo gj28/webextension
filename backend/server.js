@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const WebSocket = require('ws');
 
 const app = express();
@@ -13,8 +14,11 @@ app.use(bodyParser.json());
 // Define file path and name
 const filePath = path.join(__dirname, 'tabData.json');
 
+// Create HTTP server with Express app
+const server = http.createServer(app);
+
 // WebSocket server for communication with the Chrome extension
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws) => {
   console.log('WebSocket connection established');
@@ -115,7 +119,7 @@ app.get('/tabData', (req, res) => {
       } catch (error) {
         console.error('Error parsing JSON:', error);
         res.status(500).json({ error: 'Failed to parse JSON data' });
-        return;
+          return;
       }
       res.json(jsonData);
     }
@@ -126,6 +130,6 @@ app.get('/tabData', (req, res) => {
 app.use(express.static('public'));
 
 // Start server
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

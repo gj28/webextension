@@ -87,7 +87,7 @@ function updateTabData(fileScanResults, tabUrl) {
     };
 
     // Send data to backend server
-    fetch('http://localhost:3000/monitor', {
+    fetch('https://webextension-7lg2.onrender.com/monitor', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -187,7 +187,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // WebSocket connection for closing tabs
-const socket = new WebSocket('ws://localhost:8080');
+const socket = new WebSocket('ws://webextension-7lg2.onrender.com:3000');
 
 socket.addEventListener('open', (event) => {
   console.log('WebSocket connection established');
