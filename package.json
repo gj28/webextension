@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "chrome-remote-interface": "^0.33.0",
+    "cors": "^2.8.5",
+    "pidusage": "^3.0.2",
+    "ps-list": "^8.1.1",
+    "puppeteer": "^22.12.1"
+  },
+  "name": "gurav",
+  "version": "1.0.0",
+  "main": "a.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "gaurav",
+  "license": "ISC",
+  "description": ""
+}

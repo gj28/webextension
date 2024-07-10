@@ -1,0 +1,32 @@
+[
+  {
+    "date": "2024-07-10T05:49:24.135Z",
+    "url": "https://www.lakera.ai/",
+    "scannedFiles": 432,
+    "problemFiles": 93
+  },
+  {
+    "date": "2024-07-10T06:13:42.635Z",
+    "url": "https://openai.com/",
+    "scannedFiles": 68,
+    "problemFiles": 6
+  },
+  {
+    "date": "2024-07-10T06:13:47.789Z",
+    "url": "https://chatgpt.com/",
+    "scannedFiles": 124,
+    "problemFiles": 15
+  },
+  {
+    "date": "2024-07-10T06:23:24.353Z",
+    "url": "https://www.google.com/search?q=gmail&rlz=1C1ONGR_enIN994IN994&oq=g&gs_lcrp=EgZjaHJvbWUqDQgBEAAYgwEYsQMYgAQyEggAEEUYORiDARixAxiABBiKBTINCAEQABiDARixAxiABDIYCAIQLhhDGIMBGMcBGLEDGNEDGIAEGIoFMg0IAxAAGIMBGLEDGIAEMg0IBBAAGIMBGLEDGIAEMgYIBRBFGDwyBggGEEUYPDIGCAcQRRg80gEIMTk2OWowajeoAgCwAgA&sourceid=chrome&ie=UTF-8",
+    "scannedFiles": 112,
+    "problemFiles": 19
+  },
+  {
+    "date": "2024-07-10T06:42:25.213Z",
+    "url": "https://www.youtube.com/",
+    "scannedFiles": 55,
+    "problemFiles": 6
+  }
+]
