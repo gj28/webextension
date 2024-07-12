@@ -87,7 +87,7 @@ function updateTabData(fileScanResults, tabUrl) {
     };
 
     // Send data to backend server
-    fetch('http://localhost:3000/monitor', {
+    fetch('https://webextension-8p1b.onrender.com/monitor', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
