@@ -187,7 +187,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // WebSocket connection for closing tabs
-const socket = new WebSocket('ws://webextension-7lg2.onrender.com');
+const socket = new WebSocket('ws://webextension-7lg2.onrender.com:3000');
 
 socket.addEventListener('open', (event) => {
   console.log('WebSocket connection established');
