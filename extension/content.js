@@ -24,6 +24,7 @@ function blockSite() {
       width: 100vw; /* Full width of viewport */
       margin: 0; /* Remove default margin */
       padding: 0; /* Remove default padding */
+      overflow: hidden; /* Disable page scroll */
     }
     #This-Site-Block-By-Anti-Ai {
       font-family: "Aboreto";
@@ -95,6 +96,24 @@ function blockSite() {
     location.reload();
   });
   document.body.appendChild(toggleButton);
+
+  // Disable existing scripts
+  document.querySelectorAll('script').forEach(script => script.remove());
+
+  // Prevent new scripts from being added
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      if (mutation.addedNodes.length) {
+        mutation.addedNodes.forEach(node => {
+          if (node.nodeName.toLowerCase() === 'script') {
+            node.remove();
+          }
+        });
+      }
+    });
+  });
+
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 }
 
 // Function to initialize the toggle button if site is unblocked
