@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { handleMonitor, handleCloseTab, handleGetTabData } = require('./socket');
+const { socket } = require('./socket');
 
 // POST endpoint to receive and log data
-router.post('/monitor', handleMonitor);
+router.post('/monitor', socket.handleMonitor);
 
 // Endpoint to close tab based on URL
-router.post('/closeTab', handleCloseTab);
+router.post('/closeTab', socket.handleCloseTab);
 
 // GET endpoint to serve tabData.json content
-router.get('/tabData', handleGetTabData);
+router.get('/tabData', socket.handleGetTabData);
 
 module.exports = router;
