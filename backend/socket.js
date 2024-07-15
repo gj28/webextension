@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const WebSocket = require('ws');  // Import WebSocket
 
 // Define file path and name
 const filePath = path.join(__dirname, 'tabData.json');
