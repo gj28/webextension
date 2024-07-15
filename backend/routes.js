@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { socket } = require('./socket');
+const socket = require('./socket');
 
 // POST endpoint to receive and log data
 router.post('/monitor', socket.handleMonitor);
