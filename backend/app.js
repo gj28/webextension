@@ -4,12 +4,14 @@ const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const routes = require('./routes'); // Import routes
+const cors = require('cors');
 
 const app = express();
 const port = 5000;
 
 // Middleware
 app.use(bodyParser.json());
+app.use(cors());
 app.use(routes); // Use routes
 
 // Serve static files from the 'public' directory (optional)

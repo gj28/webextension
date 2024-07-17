@@ -1,18 +1,11 @@
 {
   "dependencies": {
-    "chrome-remote-interface": "^0.33.0",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
-    "pidusage": "^3.0.2",
-    "ps-list": "^8.1.1",
-    "puppeteer": "^22.12.1"
-  },
-  "name": "gurav",
-  "version": "1.0.0",
-  "main": "a.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "gaurav",
-  "license": "ISC",
-  "description": ""
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.14",
+    "pg": "^8.12.0"
+  }
 }

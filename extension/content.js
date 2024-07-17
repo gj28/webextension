@@ -5,7 +5,8 @@ const site_list = [
   "openai.com",
   "chatgpt.openai.com",
   "openai.com",
-  "chatgpt.com"
+  "chatgpt.com",
+  "claude.ai"
 ];
 
 // Function to block the site
@@ -16,7 +17,7 @@ function blockSite() {
   const customCSS = `
     /* Your custom CSS styles here */
     body {
-      background-image: url("https://images.unsplash.com/photo-1715464881649-894a5c244b46?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+      background-image: url("https://images.unsplash.com/photo-1510906594845-bc082582c8cc?q=80&w=2044&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
