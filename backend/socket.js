@@ -1,9 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-const WebSocket = require('ws');  // Import WebSocket
-
-// Define file path and name
-const filePath = path.join(__dirname, 'tabData.json');
+const db = require('./db');
+const WebSocket = require('ws');
 
 // Function to determine if a new entry should be created based on the date
 function shouldCreateNewEntry(lastDate) {
@@ -16,48 +12,36 @@ function shouldCreateNewEntry(lastDate) {
 }
 
 // Handler for /monitor endpoint
-function handleMonitor(req, res) {
+async function handleMonitor(req, res) {
   console.log('Received data:', req.body);
 
-  // Read existing data or initialize as empty array
-  let jsonData = [];
+  const { date, url, scannedFiles, problemFiles } = req.body;
+
   try {
-    const data = fs.readFileSync(filePath, 'utf8');
-    if (data) {
-      jsonData = JSON.parse(data);
-    }
-  } catch (error) {
-    console.error('Error reading file:', error);
-  }
+    // Find existing entry for the current URL
+    const { rows } = await db.query('SELECT * FROM data.tab_data WHERE url = $1 ORDER BY date DESC LIMIT 1', [url]);
+    let foundEntry = rows[0];
 
-  // Find existing entry for the current URL
-  let foundEntry = jsonData.find(entry => entry.url === req.body.url);
-
-  // Check if new entry should be created or existing updated
-  if (!foundEntry || shouldCreateNewEntry(foundEntry.date)) {
-    // Create new entry
-    jsonData.push({
-      date: req.body.date,
-      url: req.body.url,
-      scannedFiles: req.body.scannedFiles,
-      problemFiles: req.body.problemFiles
-    });
-  } else {
-    // Update existing entry with incremented values
-    foundEntry.scannedFiles += req.body.scannedFiles;
-    foundEntry.problemFiles += req.body.problemFiles;
-  }
-
-  // Write updated data back to file
-  fs.writeFile(filePath, JSON.stringify(jsonData, null, 2), 'utf8', (err) => {
-    if (err) {
-      console.error('Error writing file:', err);
-      res.status(500).json({ error: 'Failed to store data' });
+    if (!foundEntry || shouldCreateNewEntry(foundEntry.date)) {
+      // Create new entry
+      await db.query(
+        'INSERT INTO data.tab_data (date, url, scanned_files, problem_files) VALUES ($1, $2, $3, $4)',
+        [date, url, scannedFiles, problemFiles]
+      );
     } else {
-      console.log('Data written to file:', req.body);
-      res.json({ status: 'success' });
+      // Update existing entry with incremented values
+      await db.query(
+        'UPDATE data.tab_data SET scanned_files = scanned_files + $1, problem_files = problem_files + $2 WHERE id = $3',
+        [scannedFiles, problemFiles, foundEntry.id]
+      );
     }
-  });
+
+    console.log('Data stored in database:', req.body);
+    res.json({ status: 'success' });
+  } catch (error) {
+    console.error('Error interacting with database:', error);
+    res.status(500).json({ error: 'Failed to store data' });
+  }
 }
 
 // Handler for /closeTab endpoint
@@ -79,25 +63,14 @@ function handleCloseTab(req, res) {
 }
 
 // Handler for /tabData endpoint
-function handleGetTabData(req, res) {
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading file:', err);
-      res.status(500).json({ error: 'Failed to read data' });
-    } else {
-      let jsonData = [];
-      try {
-        if (data) {
-          jsonData = JSON.parse(data);
-        }
-      } catch (error) {
-        console.error('Error parsing JSON:', error);
-        res.status(500).json({ error: 'Failed to parse JSON data' });
-        return;
-      }
-      res.json(jsonData);
-    }
-  });
+async function handleGetTabData(req, res) {
+  try {
+    const { rows } = await db.query('SELECT * FROM data.tab_data');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error reading from database:', error);
+    res.status(500).json({ error: 'Failed to read data' });
+  }
 }
 
 module.exports = {

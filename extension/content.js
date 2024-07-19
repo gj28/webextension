@@ -17,7 +17,7 @@ function blockSite() {
   const customCSS = `
     /* Your custom CSS styles here */
     body {
-      background-image: url("https://images.unsplash.com/photo-1510906594845-bc082582c8cc?q=80&w=2044&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+      background-image: url("https://img.freepik.com/free-vector/white-technology-background_23-2148405985.jpg?w=996&t=st=1721370795~exp=1721371395~hmac=09b75d6df0725b9172528d04cf036d6e34928ab5825342ae3db2b2800053200d");
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -33,7 +33,7 @@ function blockSite() {
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: #000;
       position: fixed;
       top: 50%;
       left: 50%;
@@ -49,27 +49,31 @@ function blockSite() {
     #This-Site-Block-By-Anti-Ai a.button {
       display: inline-block;
       padding: 10px 20px;
-      background-color: rgba(255, 255, 255, 0.7);
-      color: #000;
+      background-color: rgba(145, 158, 164, 1);
+      color: #fff;
       text-decoration: none;
       border-radius: 5px;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
     #This-Site-Block-By-Anti-Ai a.button:hover {
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: rgba(165, 178, 184);
     }
     #toggle-button {
       position: fixed;
+      color: #fff;
       top: 10px;
       right: 10px;
       z-index: 10000;
-      background-color: rgba(255, 255, 255, 0.7);
+      background-color: #000;
       padding: 8px;
       border-radius: 5px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
       cursor: pointer;
     }
+#toggle-button:hover {
+    background-color: #555;
+}
   `;
 
   // Add custom styles to the head
