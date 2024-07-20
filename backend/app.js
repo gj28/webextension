@@ -38,6 +38,7 @@ wss.on('connection', (ws) => {
 
 // Pass WebSocket server to routes
 app.set('wss', wss);
+let liveSites = new Set();
 app.set('liveSites', liveSites);
 
 // Start server
