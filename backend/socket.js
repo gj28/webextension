@@ -72,54 +72,10 @@ async function handleGetTabData(req, res) {
     res.status(500).json({ error: 'Failed to read data' });
   }
 }
-async function handleGetTabData(req, res) {
-  try {
-    const { rows } = await db.query('SELECT * FROM tab_data');
-    res.json(rows);
-  } catch (error) {
-    console.error('Error reading from database:', error);
-    res.status(500).json({ error: 'Failed to read data' });
-  }
-}
-
-// Handler for /blockSites endpoint
-async function handleBlockSites(req, res) {
-  try {
-    // Fetch all blocked sites from the database
-    const { rows } = await db.query('SELECT url FROM blocked_sites');
-
-    if (rows.length === 0) {
-      return res.json({ status: 'success', message: 'No sites to block.' });
-    }
-
-    // Broadcast the message to all connected WebSocket clients
-    const wss = req.app.get('wss');
-    rows.forEach(row => {
-      const tabUrl = row.url;
-      wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({ type: 'closeTab', url: tabUrl }));
-        }
-      });
-    });
-
-    res.json({ status: 'success', message: 'Request to block sites sent.' });
-  } catch (error) {
-    console.error('Error interacting with database:', error);
-    res.status(500).json({ error: 'Failed to block sites' });
-  }
-}
-
-async function handleGetLiveSites(req, res) {
-  const liveSites = req.app.get('liveSites');
-  res.json(Array.from(liveSites));
-}
 
 module.exports = {
   handleMonitor,
   handleCloseTab,
   handleGetTabData,
-  handleBlockSites,
-  shouldCreateNewEntry,
-  handleGetLiveSites
+  shouldCreateNewEntry
 };
