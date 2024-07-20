@@ -3,6 +3,8 @@ let tabData = {
   problemFiles: 0
 };
 
+let liveUrls = new Set(); // Track live URLs
+
 // Function to reset counts after 24 hours
 function resetCountsAfter24Hours() {
   const storageKey = 'fileScanData';
@@ -100,11 +102,43 @@ function updateTabData(fileScanResults, tabUrl) {
   });
 }
 
+// WebSocket connection for closing tabs
+const socket = new WebSocket('wss://webextension-8p1b.onrender.com');
+
+socket.addEventListener('open', (event) => {
+  console.log('WebSocket connection established');
+});
+
+socket.addEventListener('message', (event) => {
+  const message = JSON.parse(event.data);
+  if (message.type === 'closeTab' && message.url) {
+    chrome.tabs.query({ url: message.url }, (tabs) => {
+      tabs.forEach((tab) => {
+        chrome.tabs.remove(tab.id, () => {
+          console.log(`Closed tab with URL: ${message.url}`);
+          liveUrls.delete(message.url); // Remove the URL from liveUrls set
+        });
+      });
+    });
+  }
+});
+
+socket.addEventListener('close', (event) => {
+  console.log('WebSocket connection closed');
+});
+
+socket.addEventListener('error', (event) => {
+  console.error('WebSocket error:', event);
+});
+
 // Function to handle tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     // Reset counts after 24 hours
     resetCountsAfter24Hours();
+
+    // Add the tab URL to the set of live URLs
+    liveUrls.add(tab.url);
 
     // When a tab finishes loading, gather data
     chrome.scripting.executeScript({
@@ -174,6 +208,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         console.log('Script executed successfully:', results);
       }
     });
+
+    // Send the new URL to the WebSocket server
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'newUrl', url: tab.url }));
+      console.log('Sent new URL to WebSocket server:', tab.url);
+    }
   }
 });
 
@@ -186,34 +226,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// WebSocket connection for closing tabs
-const socket = new WebSocket('wss://webextension-8p1b.onrender.com');
-
-socket.addEventListener('open', (event) => {
-  console.log('WebSocket connection established');
-  // Send ping messages every 30 seconds to keep the connection alive
-  setInterval(() => {
-    socket.send(JSON.stringify({ type: 'ping' }));
-  }, 30000);
-});
-
-socket.addEventListener('message', (event) => {
-  const message = JSON.parse(event.data);
-  if (message.type === 'closeTab' && message.url) {
-    chrome.tabs.query({ url: message.url }, (tabs) => {
-      tabs.forEach((tab) => {
-        chrome.tabs.remove(tab.id, () => {
-          console.log(`Closed tab with URL: ${message.url}`);
-        });
-      });
-    });
-  }
-});
-
-socket.addEventListener('close', (event) => {
-  console.log('WebSocket connection closed');
-});
-
-socket.addEventListener('error', (event) => {
-  console.error('WebSocket error:', event);
+// Handle tab removal
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  chrome.tabs.get(tabId, (tab) => {
+    if (tab) {
+      liveUrls.delete(tab.url); // Remove the URL from liveUrls set
+      console.log('Tab closed, URL removed from live URLs:', tab.url);
+    }
+  });
 });

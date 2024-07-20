@@ -23,6 +23,7 @@ const server = http.createServer(app);
 // WebSocket server for communication with the Chrome extension
 const wss = new WebSocket.Server({ server });
 
+
 wss.on('connection', (ws) => {
   console.log('WebSocket connection established');
 
@@ -37,6 +38,7 @@ wss.on('connection', (ws) => {
 
 // Pass WebSocket server to routes
 app.set('wss', wss);
+app.set('liveSites', liveSites);
 
 // Start server
 server.listen(port, () => {

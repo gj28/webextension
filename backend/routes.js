@@ -18,4 +18,6 @@ router.post('/login', authentication.login);
 
 router.get('/user', authentication.user);
 
+router.get('/liveSites', socket.handleGetLiveSites); 
+
 module.exports = router;
