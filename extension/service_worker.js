@@ -3,8 +3,6 @@ let tabData = {
   problemFiles: 0
 };
 
-let liveUrls = new Set(); // Track live URLs
-
 // Function to reset counts after 24 hours
 function resetCountsAfter24Hours() {
   const storageKey = 'fileScanData';
@@ -107,6 +105,10 @@ const socket = new WebSocket('wss://webextension-8p1b.onrender.com');
 
 socket.addEventListener('open', (event) => {
   console.log('WebSocket connection established');
+  // Send ping messages every 30 seconds to keep the connection alive
+  setInterval(() => {
+    socket.send(JSON.stringify({ type: 'ping' }));
+  }, 30000);
 });
 
 socket.addEventListener('message', (event) => {
@@ -116,7 +118,6 @@ socket.addEventListener('message', (event) => {
       tabs.forEach((tab) => {
         chrome.tabs.remove(tab.id, () => {
           console.log(`Closed tab with URL: ${message.url}`);
-          liveUrls.delete(message.url); // Remove the URL from liveUrls set
         });
       });
     });
@@ -134,104 +135,17 @@ socket.addEventListener('error', (event) => {
 // Function to handle tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
-    // Reset counts after 24 hours
     resetCountsAfter24Hours();
-
-    // Add the tab URL to the set of live URLs
-    liveUrls.add(tab.url);
-
-    // When a tab finishes loading, gather data
-    chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      func: () => {
-        // Function to check if content is suspicious
-        function isSuspicious(content) {
-          const suspiciousPatterns = [
-            /<script[^>]*>.*<\/script>/gi, // Inline scripts
-            /src\s*=\s*['"]https?:\/\/[^'"]*['"]/gi, // External script sources
-            /eval\s*\(/gi, // Usage of eval
-            /document\.write\s*\(/gi, // Usage of document.write
-            /javascript\s*:/gi // JavaScript URIs
-          ];
-
-          return suspiciousPatterns.some(pattern => pattern.test(content));
-        }
-
-        // Function to gather performance metrics and scanning
-        function gatherPerformanceMetricsAndScan() {
-          // Get all resource URLs
-          const resourceUrls = performance.getEntriesByType('resource')
-            .filter(resource => resource.initiatorType === 'script' || resource.initiatorType === 'link')
-            .map(resource => resource.name);
-
-          // Scan each resource file for suspicious content
-          const scanPromises = resourceUrls.map(url => {
-            return fetch(url)
-              .then(response => response.text())
-              .then(content => {
-                if (isSuspicious(content)) {
-                  return 1; // Return 1 if suspicious
-                } else {
-                  return 0; // Return 0 if not suspicious
-                }
-              })
-              .catch(error => {
-                console.error('Error fetching file:', url, error);
-                return 0; // Return 0 on error
-              });
-          });
-
-          // Wait for all scans to complete
-          return Promise.all(scanPromises).then(results => {
-            const problemFiles = results.reduce((sum, result) => sum + result, 0);
-            return {
-              totalFilesScanned: resourceUrls.length,
-              problemFiles
-            };
-          });
-        }
-
-        // Execute gathering of performance metrics and scanning
-        gatherPerformanceMetricsAndScan().then(fileScanResults => {
-          // Send data to background script
-          chrome.runtime.sendMessage({
-            type: 'resourceData',
-            data: fileScanResults,
-            tabUrl: window.location.href
-          });
-        });
-      }
-    }, (results) => {
-      if (chrome.runtime.lastError) {
-        console.error('Script execution error:', chrome.runtime.lastError.message);
-      } else {
-        console.log('Script executed successfully:', results);
-      }
+    scanFiles().then((fileScanResults) => {
+      updateTabData(fileScanResults, tab.url);
     });
 
-    // Send the new URL to the WebSocket server
-    if (socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: 'newUrl', url: tab.url }));
-      console.log('Sent new URL to WebSocket server:', tab.url);
-    }
+    // Notify the backend that a tab has been opened
+    socket.send(JSON.stringify({ type: 'openTab', tabId, url: tab.url }));
   }
 });
 
-// Handle messages from content scripts
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'resourceData') {
-    console.log('Received data from tab:', sender.tab.id, message.data);
-    // Update tabData and send to backend
-    updateTabData(message.data, message.tabUrl);
-  }
-});
-
-// Handle tab removal
+// Notify the backend when a tab is closed
 chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-  chrome.tabs.get(tabId, (tab) => {
-    if (tab) {
-      liveUrls.delete(tab.url); // Remove the URL from liveUrls set
-      console.log('Tab closed, URL removed from live URLs:', tab.url);
-    }
-  });
+  socket.send(JSON.stringify({ type: 'closeTab', tabId }));
 });
