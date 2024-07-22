@@ -11,9 +11,15 @@ router.post('/login', authentication.login);
 router.get('/user', authentication.user);
 
 // Endpoint to fetch live open tabs data
-router.get('/liveTabs', (req, res) => {
+router.get('/liveTabs', async (req, res) => {
   const openTabs = req.app.get('openTabs');
-  res.json(openTabs);
+
+  try {
+    const filteredTabs = await fetchLiveTabs(openTabs);
+    res.json(filteredTabs);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 module.exports = router;
