@@ -17,6 +17,10 @@ async function handleMonitor(req, res) {
 
   const { date, url, scannedFiles, problemFiles } = req.body;
 
+  if (!date || !url || !Number.isInteger(scannedFiles) || !Number.isInteger(problemFiles)) {
+    return res.status(400).json({ error: 'Invalid input data' });
+  }
+
   try {
     // Find existing entry for the current URL
     const { rows } = await db.query('SELECT * FROM data.tab_data WHERE url = $1 ORDER BY date DESC LIMIT 1', [url]);
@@ -76,10 +80,10 @@ async function handleGetTabData(req, res) {
 // Function to fetch live open tabs data
 async function fetchLiveTabs(openTabs) {
   const urls = Object.values(openTabs);
-  const query = 'SELECT url FROM data.aiurl WHERE url = ANY($1::text[])';
+  const db = 'SELECT url FROM "data".aiurl WHERE url = ANY($1::text[])';
 
   try {
-    const result = await db.query(query, [urls]);
+    const result = await db.query(db, [urls]);
     const existingUrls = result.rows.map(row => row.url);
     const filteredTabs = {};
 
