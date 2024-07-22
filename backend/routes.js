@@ -14,10 +14,16 @@ router.get('/user', authentication.user);
 router.get('/liveTabs', async (req, res) => {
   const openTabs = req.app.get('openTabs');
 
+  if (!openTabs || Object.keys(openTabs).length === 0) {
+    console.log('No open tabs found');
+    return res.json({ message: 'No open tabs found' });
+  }
+
   try {
-    const filteredTabs = await fetchLiveTabs(openTabs);
+    const filteredTabs = await socket.fetchLiveTabs(openTabs); // Correct function call
     res.json(filteredTabs);
   } catch (err) {
+    console.error('Error fetching live tabs:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
