@@ -89,6 +89,7 @@ function normalizeUrl(url) {
 }
 
 // Function to fetch live open tabs data
+// Function to fetch live open tabs data
 async function fetchLiveTabs(openTabs) {
   const urls = Object.values(openTabs).map(normalizeUrl);
   const query = 'SELECT url FROM "data".tab_data WHERE url = ANY($1::text[])';
@@ -100,13 +101,17 @@ async function fetchLiveTabs(openTabs) {
 
     // Normalize database URLs for comparison
     const existingUrls = result.rows.map(row => normalizeUrl(row.url));
+    console.log('Normalized database URLs:', existingUrls);
+
     const filteredTabs = {};
 
     // Filter openTabs to include only those URLs that exist in the database
     for (const [tabId, url] of Object.entries(openTabs)) {
-      if (existingUrls.includes(normalizeUrl(url))) {
+      const normalizedUrl = normalizeUrl(url);
+      if (existingUrls.includes(normalizedUrl)) {
         filteredTabs[tabId] = url;
       }
+      console.log(`Tab ID: ${tabId}, Original URL: ${url}, Normalized URL: ${normalizedUrl}`);
     }
 
     console.log('Filtered open tabs:', filteredTabs);
@@ -116,6 +121,7 @@ async function fetchLiveTabs(openTabs) {
     throw err;
   }
 }
+
 
 module.exports = {
   handleMonitor,
