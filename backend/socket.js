@@ -77,6 +77,7 @@ async function handleGetTabData(req, res) {
   }
 }
 
+// Function to normalize URLs by removing schemes, optional `www.`, and trailing slashes
 function normalizeUrl(url) {
   if (!url) return url;
   // Remove the scheme (http, https)
@@ -85,11 +86,12 @@ function normalizeUrl(url) {
   url = url.replace(/^www\./, '');
   // Remove trailing slash
   url = url.replace(/\/$/, '');
+  // Remove leading and trailing spaces
+  url = url.trim();
   return url;
 }
 
-// Function to fetch live open tabs data
-// Function to fetch live open tabs data
+
 async function fetchLiveTabs(openTabs) {
   const urls = Object.values(openTabs).map(normalizeUrl);
   const query = 'SELECT url FROM "data".tab_data WHERE url = ANY($1::text[])';
