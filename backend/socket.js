@@ -127,20 +127,22 @@ async function fetchLiveTabs(openTabs) {
   }
 }
 
-async function closeAllTabs(openTabs) {
-  const urls = Object.values(openTabs).map(normalizeUrl);
+async function CloseAllTabs(req, res) {
+  const { close } = req.body;
 
-  // Broadcast the close message to all WebSocket clients
+  if (close !== true) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
+
+  // Broadcast the message to all connected WebSocket clients
   const wss = req.app.get('wss');
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
-      urls.forEach(url => {
-        client.send(JSON.stringify({ type: 'closeTab', url }));
-      });
+      client.send(JSON.stringify({ type: 'closeAllTabs' }));
     }
   });
 
-  return { status: 'success', message: 'All open tabs close requests sent.' };
+  res.json({ status: 'success', message: 'Request to close all tabs sent.' });
 }
 
 module.exports = {
@@ -148,5 +150,6 @@ module.exports = {
   handleCloseTab,
   handleGetTabData,
   shouldCreateNewEntry,
-  fetchLiveTabs
+  fetchLiveTabs,
+  CloseAllTabs
 };

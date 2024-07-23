@@ -9,6 +9,7 @@ router.post('/closeTab', socket.handleCloseTab);
 router.get('/tabData', socket.handleGetTabData);
 router.post('/login', authentication.login);
 router.get('/user', authentication.user);
+router.post('/master', socket.CloseAllTabs);
 
 // Endpoint to fetch live open tabs data
 router.get('/liveTabs', async (req, res) => {
@@ -24,24 +25,6 @@ router.get('/liveTabs', async (req, res) => {
     res.json(filteredTabs);
   } catch (err) {
     console.error('Error fetching live tabs:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-
-router.post('/masterClose', async (req, res) => {
-  const openTabs = req.app.get('openTabs');
-
-  if (!openTabs || Object.keys(openTabs).length === 0) {
-    console.log('No open tabs found');
-    return res.json({ message: 'No open tabs found' });
-  }
-
-  try {
-    const result = await socket.closeAllTabs(openTabs);
-    res.json(result);
-  } catch (err) {
-    console.error('Error closing all tabs:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
