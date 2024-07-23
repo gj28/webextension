@@ -84,6 +84,8 @@ function normalizeUrl(url) {
   url = url.replace(/^https?:\/\//, '');
   // Optionally remove 'www.'
   url = url.replace(/^www\./, '');
+  // Remove trailing slash
+  url = url.replace(/\/$/, '');
   return url;
 }
 
