@@ -20,12 +20,13 @@ router.get('/liveTabs', async (req, res) => {
   }
 
   try {
-    const filteredTabs = await socket.fetchLiveTabs(openTabs); // Correct function call
+    const filteredTabs = await socket.fetchLiveTabs(openTabs);
     res.json(filteredTabs);
   } catch (err) {
     console.error('Error fetching live tabs:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 module.exports = router;

@@ -80,10 +80,11 @@ async function handleGetTabData(req, res) {
 // Function to fetch live open tabs data
 async function fetchLiveTabs(openTabs) {
   const urls = Object.values(openTabs);
-  const query = 'SELECT url FROM "data".tab_data WHERE url = ANY($1::text[])';
+  const query = 'SELECT url FROM "data".aiurl WHERE url = ANY($1::text[])';
 
   try {
     const result = await db.query(query, [urls]);
+
     const existingUrls = result.rows.map(row => row.url);
     const filteredTabs = {};
 
@@ -96,7 +97,6 @@ async function fetchLiveTabs(openTabs) {
 
     return filteredTabs;
   } catch (err) {
-    console.error('Error querying database:', err);
     throw err;
   }
 }
