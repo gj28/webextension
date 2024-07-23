@@ -1,4 +1,5 @@
 const express = require('express');
+const WebSocket = require('ws');
 const router = express.Router();
 const socket = require('./socket');
 const authentication = require('./auth/authentication');
