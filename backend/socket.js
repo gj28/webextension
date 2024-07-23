@@ -127,7 +127,21 @@ async function fetchLiveTabs(openTabs) {
   }
 }
 
+async function closeAllTabs(openTabs) {
+  const urls = Object.values(openTabs).map(normalizeUrl);
 
+  // Broadcast the close message to all WebSocket clients
+  const wss = req.app.get('wss');
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      urls.forEach(url => {
+        client.send(JSON.stringify({ type: 'closeTab', url }));
+      });
+    }
+  });
+
+  return { status: 'success', message: 'All open tabs close requests sent.' };
+}
 
 module.exports = {
   handleMonitor,
