@@ -91,7 +91,7 @@ function normalizeUrl(url) {
   return url;
 }
 
-
+// Function to fetch live open tabs data
 async function fetchLiveTabs(openTabs) {
   // Normalize the URLs from openTabs
   const urls = Object.values(openTabs).map(normalizeUrl);
@@ -113,7 +113,7 @@ async function fetchLiveTabs(openTabs) {
     // Filter openTabs to include only those URLs that exist in the database
     for (const [tabId, url] of Object.entries(openTabs)) {
       const normalizedUrl = normalizeUrl(url);
-      console.log(`Tab ID: ${tabId}, Original URL: ${url}, Normalized URL: ${normalizedUrl}`);
+      console.log(`Tab ID: ${tabId}, Original URL: ${url}, Normalized URL:${normalizedUrl}`);
       if (existingUrls.includes(normalizedUrl)) {
         filteredTabs[tabId] = url;
       }
@@ -127,7 +127,8 @@ async function fetchLiveTabs(openTabs) {
   }
 }
 
-async function CloseAllTabs(req, res) {
+// Function to close all open tabs
+async function handleCloseAllTabs(req, res) {
   const { close } = req.body;
 
   if (close !== true) {
@@ -151,5 +152,5 @@ module.exports = {
   handleGetTabData,
   shouldCreateNewEntry,
   fetchLiveTabs,
-  CloseAllTabs
+  handleCloseAllTabs
 };
