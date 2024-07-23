@@ -93,11 +93,14 @@ function normalizeUrl(url) {
 
 
 async function fetchLiveTabs(openTabs) {
+  // Normalize the URLs from openTabs
   const urls = Object.values(openTabs).map(normalizeUrl);
-  const query = 'SELECT url FROM "data".tab_data WHERE url = ANY($1::text[])';
+  const query = 'SELECT url FROM "data".aiurl WHERE url = ANY($1::text[])';
 
   try {
     console.log('Fetching live tabs, input URLs:', urls);
+
+    // Query the database
     const result = await db.query(query, [urls]);
     console.log('Database query result:', result.rows);
 
@@ -110,11 +113,10 @@ async function fetchLiveTabs(openTabs) {
     // Filter openTabs to include only those URLs that exist in the database
     for (const [tabId, url] of Object.entries(openTabs)) {
       const normalizedUrl = normalizeUrl(url);
+      console.log(`Tab ID: ${tabId}, Original URL: ${url}, Normalized URL: ${normalizedUrl}`);
       if (existingUrls.includes(normalizedUrl)) {
         filteredTabs[tabId] = url;
       }
-      // Log without additional spaces
-      console.log(`Tab ID: ${tabId}, Original URL: ${url}, Normalized URL:${normalizedUrl}`);
     }
 
     console.log('Filtered open tabs:', filteredTabs);
