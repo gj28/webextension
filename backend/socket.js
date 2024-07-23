@@ -77,7 +77,6 @@ async function handleGetTabData(req, res) {
   }
 }
 
-// Function to normalize URLs by removing schemes and optional `www.`
 function normalizeUrl(url) {
   if (!url) return url;
   // Remove the scheme (http, https)
@@ -99,6 +98,7 @@ async function fetchLiveTabs(openTabs) {
     const result = await db.query(query, [urls]);
     console.log('Database query result:', result.rows);
 
+    // Normalize database URLs for comparison
     const existingUrls = result.rows.map(row => normalizeUrl(row.url));
     const filteredTabs = {};
 
@@ -116,6 +116,7 @@ async function fetchLiveTabs(openTabs) {
     throw err;
   }
 }
+
 module.exports = {
   handleMonitor,
   handleCloseTab,
