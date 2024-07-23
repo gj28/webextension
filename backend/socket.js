@@ -77,30 +77,43 @@ async function handleGetTabData(req, res) {
   }
 }
 
+// Function to normalize URLs by removing schemes and optional `www.`
+function normalizeUrl(url) {
+  if (!url) return url;
+  // Remove the scheme (http, https)
+  url = url.replace(/^https?:\/\//, '');
+  // Optionally remove 'www.'
+  url = url.replace(/^www\./, '');
+  return url;
+}
+
 // Function to fetch live open tabs data
 async function fetchLiveTabs(openTabs) {
-  const urls = Object.values(openTabs);
-  const query = 'SELECT url FROM "data".aiurl WHERE url = ANY($1::text[])';
+  const urls = Object.values(openTabs).map(normalizeUrl);
+  const query = 'SELECT url FROM "data".tab_data WHERE url = ANY($1::text[])';
 
   try {
+    console.log('Fetching live tabs, input URLs:', urls);
     const result = await db.query(query, [urls]);
+    console.log('Database query result:', result.rows);
 
-    const existingUrls = result.rows.map(row => row.url);
+    const existingUrls = result.rows.map(row => normalizeUrl(row.url));
     const filteredTabs = {};
 
     // Filter openTabs to include only those URLs that exist in the database
     for (const [tabId, url] of Object.entries(openTabs)) {
-      if (existingUrls.includes(url)) {
+      if (existingUrls.includes(normalizeUrl(url))) {
         filteredTabs[tabId] = url;
       }
     }
 
+    console.log('Filtered open tabs:', filteredTabs);
     return filteredTabs;
   } catch (err) {
+    console.error('Error querying database:', err);
     throw err;
   }
 }
-
 module.exports = {
   handleMonitor,
   handleCloseTab,
