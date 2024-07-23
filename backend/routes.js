@@ -10,7 +10,6 @@ router.post('/closeTab', socket.handleCloseTab);
 router.get('/tabData', socket.handleGetTabData);
 router.post('/login', authentication.login);
 router.get('/user', authentication.user);
-router.post('/master', socket.handleCloseAllTabs);
 
 // Endpoint to fetch live open tabs data
 router.get('/liveTabs', async (req, res) => {

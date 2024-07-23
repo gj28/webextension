@@ -127,24 +127,6 @@ async function fetchLiveTabs(openTabs) {
   }
 }
 
-// Function to close all open tabs
-async function handleCloseAllTabs(req, res) {
-  const { close } = req.body;
-
-  if (close !== true) {
-    return res.status(400).json({ error: 'Invalid request body' });
-  }
-
-  // Broadcast the message to all connected WebSocket clients
-  const wss = req.app.get('wss');
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ type: 'closeAllTabs' }));
-    }
-  });
-
-  res.json({ status: 'success', message: 'Request to close all tabs sent.' });
-}
 
 module.exports = {
   handleMonitor,
@@ -152,5 +134,4 @@ module.exports = {
   handleGetTabData,
   shouldCreateNewEntry,
   fetchLiveTabs,
-  handleCloseAllTabs
 };
