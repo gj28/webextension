@@ -77,7 +77,7 @@ async function handleGetTabData(req, res) {
   }
 }
 
-// Function to normalize URLs by removing schemes, optional `www.`, and trailing slashes
+// Function to normalize URLs by removing schemes, optional `www.`, trailing slashes, and spaces
 function normalizeUrl(url) {
   if (!url) return url;
   // Remove the scheme (http, https)
@@ -113,7 +113,8 @@ async function fetchLiveTabs(openTabs) {
       if (existingUrls.includes(normalizedUrl)) {
         filteredTabs[tabId] = url;
       }
-      console.log(`Tab ID: ${tabId}, Original URL: ${url}, Normalized URL: ${normalizedUrl}`);
+      // Log without additional spaces
+      console.log(`Tab ID: ${tabId}, Original URL: ${url}, Normalized URL:${normalizedUrl}`);
     }
 
     console.log('Filtered open tabs:', filteredTabs);
@@ -123,6 +124,7 @@ async function fetchLiveTabs(openTabs) {
     throw err;
   }
 }
+
 
 
 module.exports = {
