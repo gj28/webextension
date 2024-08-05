@@ -22,7 +22,8 @@ router.get('/liveTabs/:userId', async (req, res) => {
   }
 
   try {
-    const liveTabs = await socket.fetchLiveTabs(userOpenTabs[userId]);
+    // Normalize and fetch tabs
+    const liveTabs = await fetchLiveTabs(userOpenTabs[userId]);
     res.json(liveTabs);
   } catch (err) {
     console.error('Error fetching live tabs:', err);
@@ -41,7 +42,7 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
   }
 
   try {
-    const liveTabs = await socket.fetchLiveTabs(userOpenTabs[userId]);
+    const liveTabs = await fetchLiveTabs(userOpenTabs[userId]);
 
     // Close each tab for the specified user
     const wss = req.app.get('wss');
