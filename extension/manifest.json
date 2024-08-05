@@ -25,5 +25,14 @@
       "js": ["content.js"],
       "run_at": "document_start"
     }
-  ]
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["popup.html", "login.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }

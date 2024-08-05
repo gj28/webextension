@@ -15,22 +15,22 @@ function shouldCreateNewEntry(lastDate) {
 async function handleMonitor(req, res) {
   console.log('Received data:', req.body);
 
-  const { date, url, scannedFiles, problemFiles } = req.body;
+  const { date, url, scannedFiles, problemFiles, userId } = req.body;
 
-  if (!date || !url || !Number.isInteger(scannedFiles) || !Number.isInteger(problemFiles)) {
+  if (!date || !url || !Number.isInteger(scannedFiles) || !Number.isInteger(problemFiles) || !userId) {
     return res.status(400).json({ error: 'Invalid input data' });
   }
 
   try {
     // Find existing entry for the current URL
-    const { rows } = await db.query('SELECT * FROM data.tab_data WHERE url = $1 ORDER BY date DESC LIMIT 1', [url]);
+    const { rows } = await db.query('SELECT * FROM data.tab_data WHERE url = $1 AND user_id = $2 ORDER BY date DESC LIMIT 1', [url, userId]);
     let foundEntry = rows[0];
 
     if (!foundEntry || shouldCreateNewEntry(foundEntry.date)) {
       // Create new entry
       await db.query(
-        'INSERT INTO data.tab_data (date, url, scanned_files, problem_files) VALUES ($1, $2, $3, $4)',
-        [date, url, scannedFiles, problemFiles]
+        'INSERT INTO data.tab_data (date, url, scanned_files, problem_files, user_id) VALUES ($1, $2, $3, $4, $5)',
+        [date, url, scannedFiles, problemFiles, userId]
       );
     } else {
       // Update existing entry with incremented values
@@ -50,20 +50,20 @@ async function handleMonitor(req, res) {
 
 // Handler for /closeTab endpoint
 function handleCloseTab(req, res) {
-  const tabUrl = req.body.url;
-  if (!tabUrl) {
-    return res.status(400).json({ error: 'URL is required' });
+  const { url, userId } = req.body;
+  if (!url || !userId) {
+    return res.status(400).json({ error: 'URL and user ID are required' });
   }
 
-  // Broadcast the message to all connected WebSocket clients
+  // Broadcast the message to all connected WebSocket clients with the correct userId
   const wss = req.app.get('wss');
   wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ type: 'closeTab', url: tabUrl }));
+    if (client.readyState === WebSocket.OPEN && client.userId === userId) {
+      client.send(JSON.stringify({ type: 'closeTab', url: url }));
     }
   });
 
-  res.json({ status: 'success', message: `Request to close tab with URL ${tabUrl} sent.` });
+  res.json({ status: 'success', message: `Request to close tab with URL ${url} and user ID ${userId} sent.` });
 }
 
 // Handler for /tabData endpoint
@@ -92,16 +92,16 @@ function normalizeUrl(url) {
 }
 
 // Function to fetch live open tabs data
-async function fetchLiveTabs(openTabs) {
+async function fetchLiveTabs(openTabs, userId) {
   // Normalize the URLs from openTabs
   const urls = Object.values(openTabs).map(normalizeUrl);
-  const query = 'SELECT url FROM "data".aiurl WHERE url = ANY($1::text[])';
+  const query = 'SELECT url FROM "data".aiurl WHERE url = ANY($1::text[]) AND user_id = $2';
 
   try {
     console.log('Fetching live tabs, input URLs:', urls);
 
     // Query the database
-    const result = await db.query(query, [urls]);
+    const result = await db.query(query, [urls, userId]);
     console.log('Database query result:', result.rows);
 
     // Normalize database URLs for comparison
@@ -127,6 +127,27 @@ async function fetchLiveTabs(openTabs) {
   }
 }
 
+// WebSocket server setup
+const wss = new WebSocket.Server({ noServer: true });
+wss.on('connection', (ws, req) => {
+  // Extract userId from query parameters
+  const userId = new URL(req.url, `http://${req.headers.host}`).searchParams.get('userId');
+  ws.userId = userId; // Store userId in WebSocket client object
+
+  console.log(`WebSocket connection established for user ${userId}`);
+
+  ws.on('message', (message) => {
+    console.log('Received message:', message);
+  });
+
+  ws.on('close', () => {
+    console.log(`WebSocket connection closed for user ${userId}`);
+  });
+
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+  });
+});
 
 module.exports = {
   handleMonitor,
@@ -134,4 +155,5 @@ module.exports = {
   handleGetTabData,
   shouldCreateNewEntry,
   fetchLiveTabs,
+  wss, // Export WebSocket server instance
 };
