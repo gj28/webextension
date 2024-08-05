@@ -11,10 +11,14 @@ router.get('/tabData', socket.handleGetTabData);
 router.post('/login', authentication.login);
 router.get('/user', authentication.user);
 
-// Endpoint to fetch live open tabs data for a specific user
-router.get('/liveTabs/:userId', async (req, res) => {
-  const userId = req.params.userId;
+// Endpoint to fetch live open tabs data
+router.get('/liveTabs', async (req, res) => {
   const openTabs = req.app.get('openTabs');
+  const userId = req.query.userId; // Retrieve userId from query parameters
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
 
   if (!openTabs || Object.keys(openTabs).length === 0) {
     console.log('No open tabs found');
@@ -22,8 +26,8 @@ router.get('/liveTabs/:userId', async (req, res) => {
   }
 
   try {
-    const filteredTabs = await socket.fetchLiveTabs(openTabs, userId);
-    res.json(filteredTabs);
+    const filteredTabs = await socket.fetchLiveTabs(openTabs);
+    res.json({ userId, tabs: filteredTabs });
   } catch (err) {
     console.error('Error fetching live tabs:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -31,8 +35,12 @@ router.get('/liveTabs/:userId', async (req, res) => {
 });
 
 router.post('/closeLiveTabs', async (req, res) => {
-  const { userId } = req.body; // Extract userId from request body
   const openTabs = req.app.get('openTabs');
+  const userId = req.body.userId; // Retrieve userId from request body
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
 
   if (!openTabs || Object.keys(openTabs).length === 0) {
     console.log('No open tabs found');
@@ -40,17 +48,17 @@ router.post('/closeLiveTabs', async (req, res) => {
   }
 
   try {
-    const filteredTabs = await socket.fetchLiveTabs(openTabs, userId);
+    const filteredTabs = await socket.fetchLiveTabs(openTabs);
 
     // Close each tab returned by fetchLiveTabs
     const wss = req.app.get('wss');
-    wss.clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN && client.userId === userId) {
-        for (const url of Object.values(filteredTabs)) {
-          client.send(JSON.stringify({ type: 'closeTab', url: url }));
+    for (const url of Object.values(filteredTabs)) {
+      wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: 'closeTab', url: url, userId: userId }));
         }
-      }
-    });
+      });
+    }
 
     res.json({ status: 'success', message: 'Request to close tabs sent.', tabs: filteredTabs });
   } catch (err) {
@@ -58,7 +66,5 @@ router.post('/closeLiveTabs', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-
 
 module.exports = router;

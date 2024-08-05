@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
-const routes = require('./routes'); // Import routes
+const routes = require('./routes');
 const cors = require('cors');
 
 const app = express();
@@ -25,8 +25,11 @@ const server = http.createServer(app);
 // WebSocket server for communication with the Chrome extension
 const wss = new WebSocket.Server({ server });
 
-wss.on('connection', (ws) => {
-  console.log('WebSocket connection established');
+wss.on('connection', (ws, req) => {
+  const urlParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
+  const userId = urlParams.get('userId');
+
+  console.log(`WebSocket connection established for userId: ${userId}`);
 
   ws.on('message', (message) => {
     const msg = JSON.parse(message);
