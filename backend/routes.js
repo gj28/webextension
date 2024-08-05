@@ -21,11 +21,13 @@ router.get('/liveTabs/:userId', async (req, res) => {
     return res.json({ message: `No open tabs found for userId=${userId}` });
   }
 
-  // Simply return all open tabs for the user without database restriction
-  const openTabs = userOpenTabs[userId];
-  console.log(`Open tabs for userId=${userId}:`, openTabs);
-
-  res.json({ status: 'success', tabs: openTabs });
+  try {
+    const liveTabs = await socket.fetchLiveTabs(userOpenTabs[userId]);
+    res.json(liveTabs);
+  } catch (err) {
+    console.error('Error fetching live tabs:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Endpoint to close live tabs for a specific user
@@ -38,20 +40,24 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
     return res.json({ message: `No open tabs found for userId=${userId}` });
   }
 
-  const openTabs = userOpenTabs[userId];
-  console.log(`Closing tabs for userId=${userId}:`, openTabs);
+  try {
+    const liveTabs = await socket.fetchLiveTabs(userOpenTabs[userId]);
 
-  // Broadcast close tab messages for each open tab
-  const wss = req.app.get('wss');
-  for (const url of Object.values(openTabs)) {
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({ type: 'closeTab', url: url, userId: userId }));
-      }
-    });
+    // Close each tab for the specified user
+    const wss = req.app.get('wss');
+    for (const url of Object.values(liveTabs)) {
+      wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: 'closeTab', url: url, userId: userId }));
+        }
+      });
+    }
+
+    res.json({ status: 'success', message: `Request to close tabs sent for userId=${userId}.`, tabs: liveTabs });
+  } catch (err) {
+    console.error('Error closing live tabs:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  res.json({ status: 'success', message: 'Request to close tabs sent.', tabs: openTabs });
 });
 
 module.exports = router;
