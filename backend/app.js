@@ -25,10 +25,13 @@ const wss = new WebSocket.Server({ server, path: '/socket' });
 const userOpenTabs = {}; // Object to keep track of user-specific open tabs
 
 wss.on('connection', (ws, req) => {
+  console.log('Incoming WebSocket connection request');
+
   const urlParams = new URLSearchParams(req.url.split('?')[1]);
   const userId = urlParams.get('userId');
 
   if (!userId) {
+    console.log('No userId provided in the connection request');
     ws.close(4001, 'User ID not provided');
     return;
   }
@@ -40,6 +43,8 @@ wss.on('connection', (ws, req) => {
   }
 
   ws.on('message', (message) => {
+    console.log(`Received message from userId=${userId}:`, message);
+
     const msg = JSON.parse(message);
     const { type, tabId, url } = msg;
 
@@ -55,12 +60,14 @@ wss.on('connection', (ws, req) => {
       default:
         console.log(`Unknown message type received from userId=${userId}:`, message);
     }
-
-    console.log(`Received message from userId=${userId}:`, message);
   });
 
   ws.on('close', () => {
     console.log(`WebSocket connection closed for userId=${userId}`);
+  });
+
+  ws.on('error', (error) => {
+    console.error(`WebSocket error for userId=${userId}:`, error);
   });
 
   // Send the initial state of open tabs to the client
