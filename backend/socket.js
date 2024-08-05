@@ -55,7 +55,7 @@ function handleCloseTab(req, res) {
     return res.status(400).json({ error: 'URL and user ID are required' });
   }
 
-  // Broadcast the message to all connected WebSocket clients
+  // Broadcast the message to all connected WebSocket clients for the specific user
   const wss = req.app.get('wss');
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
@@ -92,9 +92,9 @@ function normalizeUrl(url) {
 }
 
 // Function to fetch live open tabs data
-async function fetchLiveTabs(openTabs) {
-  // Normalize the URLs from openTabs
-  const urls = Object.values(openTabs).map(normalizeUrl);
+async function fetchLiveTabs(userOpenTabs) {
+  // Normalize the URLs from userOpenTabs
+  const urls = Object.values(userOpenTabs).map(normalizeUrl);
   const query = 'SELECT url FROM "data".aiurl WHERE url = ANY($1::text[])';
 
   try {
@@ -110,8 +110,8 @@ async function fetchLiveTabs(openTabs) {
 
     const filteredTabs = {};
 
-    // Filter openTabs to include only those URLs that exist in the database
-    for (const [tabId, url] of Object.entries(openTabs)) {
+    // Filter userOpenTabs to include only those URLs that exist in the database
+    for (const [tabId, url] of Object.entries(userOpenTabs)) {
       const normalizedUrl = normalizeUrl(url);
       console.log(`Tab ID: ${tabId}, Original URL: ${url}, Normalized URL:${normalizedUrl}`);
       if (existingUrls.includes(normalizedUrl)) {

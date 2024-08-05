@@ -14,22 +14,15 @@ router.get('/user', authentication.user);
 // Endpoint to fetch live open tabs data for a specific user
 router.get('/liveTabs/:userId', async (req, res) => {
   const userId = req.params.userId;
-  const openTabs = req.app.get('openTabs');
+  const userOpenTabs = req.app.get('userOpenTabs');
 
-  if (!openTabs || Object.keys(openTabs).length === 0) {
-    console.log('No open tabs found');
-    return res.json({ message: 'No open tabs found' });
+  if (!userOpenTabs[userId] || Object.keys(userOpenTabs[userId]).length === 0) {
+    console.log(`No open tabs found for userId=${userId}`);
+    return res.json({ message: `No open tabs found for userId=${userId}` });
   }
 
   try {
-    const userOpenTabs = Object.entries(openTabs).reduce((acc, [tabId, tabData]) => {
-      if (tabData.userId === userId) {
-        acc[tabId] = tabData.url;
-      }
-      return acc;
-    }, {});
-
-    const filteredTabs = await socket.fetchLiveTabs(userOpenTabs);
+    const filteredTabs = await socket.fetchLiveTabs(userOpenTabs[userId]);
     res.json(filteredTabs);
   } catch (err) {
     console.error('Error fetching live tabs:', err);
@@ -37,31 +30,25 @@ router.get('/liveTabs/:userId', async (req, res) => {
   }
 });
 
-router.post('/closeLiveTabs', async (req, res) => {
-  const { userId } = req.body;
-  const openTabs = req.app.get('openTabs');
+// Endpoint to close live tabs for a specific user
+router.post('/closeLiveTabs/:userId', async (req, res) => {
+  const userId = req.params.userId;
+  const userOpenTabs = req.app.get('userOpenTabs');
 
-  if (!openTabs || Object.keys(openTabs).length === 0) {
-    console.log('No open tabs found');
-    return res.json({ message: 'No open tabs found' });
+  if (!userOpenTabs[userId] || Object.keys(userOpenTabs[userId]).length === 0) {
+    console.log(`No open tabs found for userId=${userId}`);
+    return res.json({ message: `No open tabs found for userId=${userId}` });
   }
 
   try {
-    const userOpenTabs = Object.entries(openTabs).reduce((acc, [tabId, tabData]) => {
-      if (tabData.userId === userId) {
-        acc[tabId] = tabData.url;
-      }
-      return acc;
-    }, {});
+    const filteredTabs = await socket.fetchLiveTabs(userOpenTabs[userId]);
 
-    const filteredTabs = await socket.fetchLiveTabs(userOpenTabs);
-
-    // Close each tab returned by fetchLiveTabs for the specific user
+    // Close each tab returned by fetchLiveTabs
     const wss = req.app.get('wss');
     for (const url of Object.values(filteredTabs)) {
       wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({ type: 'closeTab', url: url }));
+          client.send(JSON.stringify({ type: 'closeTab', url: url, userId: userId }));
         }
       });
     }
