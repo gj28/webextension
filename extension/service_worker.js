@@ -9,17 +9,19 @@ function resetCountsAfter24Hours() {
   const now = new Date();
 
   // Retrieve last reset date from storage
-  chrome.storage.local.get('lastResetDate', (result) => {
+  chrome.storage.local.get(['fileScanData', 'lastResetDate'], (result) => {
     const lastReset = result.lastResetDate;
 
     // Check if 24 hours have passed since last reset
     if (!lastReset || now - new Date(lastReset) >= 24 * 60 * 60 * 1000) {
       // Reset counts and update last reset date
-      tabData.scannedFiles = 0;
-      tabData.problemFiles = 0;
+      tabData = { scannedFiles: 0, problemFiles: 0 };
       chrome.storage.local.set({ fileScanData: tabData, lastResetDate: now.toISOString() }, () => {
         console.log('Counts reset after 24 hours.');
       });
+    } else {
+      // If counts exist in storage, use them
+      tabData = result.fileScanData || tabData;
     }
   });
 }
@@ -88,16 +90,21 @@ function updateTabData(fileScanResults, tabUrl) {
     };
 
     // Send data to backend server
-    fetch('https://webextension-8p1b.onrender.com/monitor', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(dataEntry),
-    })
-      .then((response) => response.json())
-      .then((data) => console.log('Data sent to backend:', data))
-      .catch((error) => console.error('Error sending data:', error));
+    chrome.storage.local.get('userId', (result) => {
+      const userId = result.userId;
+      if (userId) {
+        fetch(`https://webextension-8p1b.onrender.com/monitor`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(dataEntry),
+        })
+          .then((response) => response.json())
+          .then((data) => console.log('Data sent to backend:', data))
+          .catch((error) => console.error('Error sending data:', error));
+      }
+    });
   });
 }
 
@@ -132,11 +139,6 @@ function initializeWebSocket(userId) {
 
   socket.addEventListener('error', (event) => {
     console.error('WebSocket error:', event);
-  });
-
-  // Notify the backend when a tab is closed
-  chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-    socket.send(JSON.stringify({ type: 'closeTab', tabId }));
   });
 
   return socket;

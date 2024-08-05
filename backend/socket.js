@@ -1,6 +1,8 @@
 const db = require('./db');
 const WebSocket = require('ws');
 
+let wss = new WebSocket.Server({ noServer: true });
+
 // Function to determine if a new entry should be created based on the date
 function shouldCreateNewEntry(lastDate) {
   const lastEntryDate = new Date(lastDate);
@@ -56,7 +58,6 @@ function handleCloseTab(req, res) {
   }
 
   // Broadcast the message to all connected WebSocket clients with the correct userId
-  const wss = req.app.get('wss');
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN && client.userId === userId) {
       client.send(JSON.stringify({ type: 'closeTab', url: url }));
@@ -128,7 +129,6 @@ async function fetchLiveTabs(openTabs, userId) {
 }
 
 // WebSocket server setup
-const wss = new WebSocket.Server({ noServer: true });
 wss.on('connection', (ws, req) => {
   // Extract userId from query parameters
   const userId = new URL(req.url, `http://${req.headers.host}`).searchParams.get('userId');
