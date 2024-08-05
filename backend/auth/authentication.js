@@ -167,7 +167,7 @@ function getUsers(req, res) {
         const user = result.rows[0];
         if (!user) {
           console.error('User does not exist!');
-          return res.status(401).json({ 
+          return res.status(401).json({
             status: 401,
             message: 'User does not exist!',
             data: {}
@@ -176,7 +176,7 @@ function getUsers(req, res) {
   
         if (user.verified === 0) {
           console.error('User is not verified. Please verify your account.');
-          return res.status(401).json({ 
+          return res.status(401).json({
             status: 401,
             message: 'User is not verified. Please verify your account.',
             data: {}
@@ -192,7 +192,7 @@ function getUsers(req, res) {
   
             if (!isPasswordValid) {
               console.error('Invalid credentials');
-              return res.status(401).json({ 
+              return res.status(401).json({
                 status: 401,
                 message: 'Invalid credentials',
                 data: {}
@@ -206,18 +206,18 @@ function getUsers(req, res) {
             const token = jwtUtils.generateToken(tokenPayload);
   
             // Log the success if no error occurred
-            res.json({ 
-                token: token,
-                userid: user.userid,
-                fullname: user.fullname,
-                contactno: user.contactno,
-                usertype: user.usertype,
-                personalemail: user.personalemail
-               
+            res.json({
+              token: token,
+              userid: user.userid,
+              fullname: user.fullname,
+              contactno: user.contactno,
+              usertype: user.usertype,
+              personalemail: user.personalemail
+  
             });
           } catch (error) {
             console.error(error);
-            res.status(500).json({ 
+            res.status(500).json({
               status: 500,
               message: 'Internal server error',
               data: {}
@@ -226,7 +226,7 @@ function getUsers(req, res) {
         });
       } catch (error) {
         console.error(error);
-        res.status(500).json({ 
+        res.status(500).json({
           status: 500,
           message: 'Internal server error',
           data: {}
@@ -234,6 +234,7 @@ function getUsers(req, res) {
       }
     });
   }
+  
 
   function user(req, res) {
     // Check if Authorization header exists
