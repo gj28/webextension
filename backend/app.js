@@ -5,6 +5,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const routes = require('./routes');
 const cors = require('cors');
+const { normalizeUrl, fetchLiveTabs } = require('./helpers'); // Import the helper functions
 
 const app = express();
 const port = 5000;
@@ -23,56 +24,6 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server, path: '/socket' });
 
 const userOpenTabs = {}; // Object to keep track of user-specific open tabs
-
-// Utility function to normalize URLs
-function normalizeUrl(url) {
-  if (!url) return url;
-  // Remove the scheme (http, https)
-  url = url.replace(/^https?:\/\//, '');
-  // Optionally remove 'www.'
-  url = url.replace(/^www\./, '');
-  // Remove trailing slash
-  url = url.replace(/\/$/, '');
-  // Remove leading and trailing spaces
-  url = url.trim();
-  return url;
-}
-
-// Function to fetch live open tabs data
-async function fetchLiveTabs(userOpenTabs) {
-  // Normalize the URLs from userOpenTabs
-  const urls = Object.values(userOpenTabs).map(normalizeUrl);
-  const query = 'SELECT url FROM "data".aiurl WHERE url = ANY($1::text[])';
-
-  try {
-    console.log('Fetching live tabs, input URLs:', urls);
-
-    // Query the database
-    const result = await db.query(query, [urls]);
-    console.log('Database query result:', result.rows);
-
-    // Normalize database URLs for comparison
-    const existingUrls = result.rows.map(row => normalizeUrl(row.url));
-    console.log('Normalized database URLs:', existingUrls);
-
-    const filteredTabs = {};
-
-    // Filter userOpenTabs to include only those URLs that exist in the database
-    for (const [tabId, url] of Object.entries(userOpenTabs)) {
-      const normalizedUrl = normalizeUrl(url);
-      console.log(`Tab ID: ${tabId}, Original URL: ${url}, Normalized URL:${normalizedUrl}`);
-      if (existingUrls.includes(normalizedUrl)) {
-        filteredTabs[tabId] = url;
-      }
-    }
-
-    console.log('Filtered open tabs:', filteredTabs);
-    return filteredTabs;
-  } catch (err) {
-    console.error('Error querying database:', err);
-    throw err;
-  }
-}
 
 wss.on('connection', (ws, req) => {
   console.log('Incoming WebSocket connection request');
@@ -100,7 +51,8 @@ wss.on('connection', (ws, req) => {
 
     switch (type) {
       case 'openTab':
-        userOpenTabs[userId][tabId] = url;
+        const normalizedUrl = normalizeUrl(url);
+        userOpenTabs[userId][tabId] = normalizedUrl; // Store the normalized URL
         broadcastOpenTabs(userId);
         break;
       case 'closeTab':
@@ -108,7 +60,10 @@ wss.on('connection', (ws, req) => {
         broadcastOpenTabs(userId);
         break;
       default:
-        console.log(`Unknown message type received from userId=${userId}:`, message);
+        console.log(
+          `Unknown message type received from userId=${userId}:`,
+          message
+        );
     }
   });
 
@@ -128,7 +83,9 @@ wss.on('connection', (ws, req) => {
 function broadcastOpenTabs(userId) {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ type: 'openTabs', tabs: userOpenTabs[userId] }));
+      client.send(
+        JSON.stringify({ type: 'openTabs', tabs: userOpenTabs[userId] })
+      );
     }
   });
 }

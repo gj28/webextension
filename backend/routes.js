@@ -3,6 +3,7 @@ const WebSocket = require('ws');
 const router = express.Router();
 const socket = require('./socket');
 const authentication = require('./auth/authentication');
+const { fetchLiveTabs } = require('./helpers'); // Import fetchLiveTabs
 
 // Existing endpoints
 router.post('/monitor', socket.handleMonitor);
@@ -47,14 +48,20 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
     // Close each tab for the specified user
     const wss = req.app.get('wss');
     for (const url of Object.values(liveTabs)) {
-      wss.clients.forEach(client => {
+      wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({ type: 'closeTab', url: url, userId: userId }));
+          client.send(
+            JSON.stringify({ type: 'closeTab', url: url, userId: userId })
+          );
         }
       });
     }
 
-    res.json({ status: 'success', message: `Request to close tabs sent for userId=${userId}.`, tabs: liveTabs });
+    res.json({
+      status: 'success',
+      message: `Request to close tabs sent for userId=${userId}.`,
+      tabs: liveTabs,
+    });
   } catch (err) {
     console.error('Error closing live tabs:', err);
     res.status(500).json({ error: 'Internal server error' });
