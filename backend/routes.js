@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const socket = require('./socket');
 const authentication = require('./auth/authentication');
-const { fetchLiveTabs, transformToValidUrl } = require('./helpers'); // Import the new function
+const { fetchLiveTabs, transformToValidUrl, filterTabs } = require('./helpers'); // Import the filterTabs function
 
 // Existing endpoints
 router.post('/monitor', socket.handleMonitor);

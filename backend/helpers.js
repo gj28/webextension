@@ -1,5 +1,3 @@
-// helpers.js
-
 const db = require('./db'); // Ensure the database connection is imported
 
 // Function to normalize URLs by removing the scheme, 'www.', trailing slashes, and spaces
@@ -62,8 +60,22 @@ async function fetchLiveTabs(userOpenTabs) {
   }
 }
 
+// Example filter function based on certain criteria
+function filterTabs(tabs) {
+  // Apply your filtering logic here
+  // For example, close tabs that contain 'example.com' in their URL
+  const filtered = {};
+  for (const [tabId, url] of Object.entries(tabs)) {
+    if (url.includes('example.com')) {
+      filtered[tabId] = url;
+    }
+  }
+  return filtered;
+}
+
 module.exports = {
   normalizeUrl,
-  transformToValidUrl, // Export the new function
+  transformToValidUrl,
   fetchLiveTabs,
+  filterTabs, // Export the filterTabs function
 };
