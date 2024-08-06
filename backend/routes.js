@@ -43,6 +43,7 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
     return res.status(400).json({ error: 'Invalid request. Please provide { "close": true } in the request body.' });
   }
 
+  // Verify if the user has any open tabs
   if (!userOpenTabs[userId] || Object.keys(userOpenTabs[userId]).length === 0) {
     console.log(`No open tabs found for userId=${userId}`);
     return res.json({ message: `No open tabs found for userId=${userId}` });
@@ -52,10 +53,14 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
     // Fetch live tabs that are currently open for the user
     const liveTabs = await fetchLiveTabs(userOpenTabs[userId]);
 
+    // Create a new object with valid URLs
+    const validLiveTabs = Object.fromEntries(
+      Object.entries(liveTabs).map(([tabId, url]) => [tabId, transformToValidUrl(url)])
+    );
+
     // Close each tab for the specified user
     const wss = req.app.get('wss');
-    for (const url of Object.values(liveTabs)) {
-      const validUrl = transformToValidUrl(url); // Transform the URL to a valid form
+    for (const validUrl of Object.values(validLiveTabs)) {
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(
@@ -65,10 +70,11 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
       });
     }
 
+    // Respond with the transformed tabs
     res.json({
       status: 'success',
       message: `Request to close tabs sent for userId=${userId}.`,
-      tabs: liveTabs,
+      tabs: validLiveTabs,
     });
   } catch (err) {
     console.error('Error closing live tabs:', err);
