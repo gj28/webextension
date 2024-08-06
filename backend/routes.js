@@ -53,13 +53,15 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
     // Fetch live tabs that are currently open for the user
     const liveTabs = await fetchLiveTabs(userOpenTabs[userId]);
 
-    // Create a new object with valid URLs
-    const validLiveTabs = Object.fromEntries(
-      Object.entries(liveTabs).map(([tabId, url]) => [tabId, transformToValidUrl(url)])
-    );
-
     // Close each tab for the specified user
     const wss = req.app.get('wss');
+    const validLiveTabs = Object.fromEntries(
+      Object.entries(liveTabs).map(([tabId, url]) => {
+        const validUrl = transformToValidUrl(url); // Transform the URL to a valid form
+        return [tabId, validUrl];
+      })
+    );
+
     for (const validUrl of Object.values(validLiveTabs)) {
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
@@ -70,7 +72,6 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
       });
     }
 
-    // Respond with the transformed tabs
     res.json({
       status: 'success',
       message: `Request to close tabs sent for userId=${userId}.`,
