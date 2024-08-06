@@ -37,12 +37,19 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
   const userId = req.params.userId;
   const userOpenTabs = req.app.get('userOpenTabs');
 
+  // Check if the "close" flag is set to true in the request body
+  const { close } = req.body;
+  if (close !== true) {
+    return res.status(400).json({ error: 'Invalid request. Please provide { "close": true } in the request body.' });
+  }
+
   if (!userOpenTabs[userId] || Object.keys(userOpenTabs[userId]).length === 0) {
     console.log(`No open tabs found for userId=${userId}`);
     return res.json({ message: `No open tabs found for userId=${userId}` });
   }
 
   try {
+    // Fetch live tabs that are currently open for the user
     const liveTabs = await fetchLiveTabs(userOpenTabs[userId]);
 
     // Close each tab for the specified user

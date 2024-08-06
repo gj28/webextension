@@ -53,20 +53,33 @@ async function handleMonitor(req, res) {
 
 // Handler for /closeTab endpoint
 function handleCloseTab(req, res) {
-  const { url, userId } = req.body;
+  const { userId } = req.params; // Extract userId from URL params
+  const { url } = req.body; // Extract url from request body
+
   if (!url || !userId) {
     return res.status(400).json({ error: 'URL and user ID are required' });
   }
 
   // Broadcast the message to all connected WebSocket clients for the specific user
   const wss = req.app.get('wss');
+  const validUrl = transformToValidUrl(url); // Transform normalized URL to valid form
+
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ type: 'closeTab', url: url, userId: userId }));
+      client.send(
+        JSON.stringify({
+          type: 'closeTab',
+          url: validUrl, // Send the valid URL
+          userId: userId,
+        })
+      );
     }
   });
 
-  res.json({ status: 'success', message: `Request to close tab with URL ${url} and user ID ${userId} sent.` });
+  res.json({
+    status: 'success',
+    message: `Request to close tab with URL ${validUrl} and user ID ${userId} sent.`,
+  });
 }
 
 // Handler for /tabData endpoint

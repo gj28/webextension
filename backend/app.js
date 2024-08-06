@@ -5,7 +5,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const routes = require('./routes');
 const cors = require('cors');
-const { normalizeUrl, fetchLiveTabs } = require('./helpers'); // Import the helper functions
+const { normalizeUrl } = require('./helpers'); // Import normalizeUrl function
 
 const app = express();
 const port = 5000;
