@@ -105,7 +105,6 @@ router.post('/closeAllTabs/:userId', async (req, res) => {
 });
 
 
-// API endpoint to fetch live tabs and close filtered tabs
 router.post('/closeFilteredTabs', async (req, res) => {
   const { userId } = req.body;
 
