@@ -17,10 +17,11 @@ function normalizeUrl(url) {
 }
 
 // Function to transform normalized URLs back to valid URLs
-function transformToValidUrl(url, scheme = 'https') {
-  if (!url) return url;
-  // Add the scheme back to the URL
-  return `${scheme}://${url}`;
+function transformToValidUrl(normalizedUrl) {
+  if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+    return `https://${normalizedUrl}`; // Prepend https:// if no scheme is present
+  }
+  return normalizedUrl;
 }
 
 // Function to fetch live open tabs data
