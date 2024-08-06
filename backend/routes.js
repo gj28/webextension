@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const socket = require('./socket');
 const authentication = require('./auth/authentication');
-const { fetchLiveTabs, transformToValidUrl, filterTabs } = require('./helpers'); // Import the new function
+const { fetchLiveTabs, transformToValidUrl } = require('./helpers'); // Import the new function
 
 // Existing endpoints
 router.post('/monitor', socket.handleMonitor);
@@ -114,17 +114,23 @@ router.post('/closeFilteredTabs', async (req, res) => {
 
   try {
     // Fetch live open tabs
-    const userOpenTabs = await fetchLiveTabs(userId);
+    const userOpenTabs = req.app.get('userOpenTabs')[userId];
+    if (!userOpenTabs || Object.keys(userOpenTabs).length === 0) {
+      console.log(`No open tabs found for userId=${userId}`);
+      return res.json({ message: `No open tabs found for userId=${userId}` });
+    }
+
+    const liveTabs = await fetchLiveTabs(userOpenTabs);
 
     // Filter tabs based on your criteria
-    const filteredTabs = filterTabs(userOpenTabs);
+    const filteredTabs = filterTabs(liveTabs);
 
     // Close filtered tabs
     await socket.closeFilteredTabs(userId, filteredTabs, req.app.get('wss'));
 
     res.json({
       status: 'success',
-      message: `Requested to close ${filteredTabs.length} tabs for user ${userId}.`,
+      message: `Requested to close ${Object.keys(filteredTabs).length} tabs for user ${userId}.`,
     });
   } catch (error) {
     console.error('Error closing filtered tabs:', error);

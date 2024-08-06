@@ -103,12 +103,10 @@ async function fetchLiveTabs(userOpenTabs) {
 
 // Function to close all live tabs for a specific user
 // Function to close all filtered tabs
-async function closeFilteredTabs(userId, filteredTabs) {
-  const wss = app.get('wss');
-
+async function closeFilteredTabs(userId, filteredTabs, wss) {
   // Send a closeTab message for each filtered tab
-  filteredTabs.forEach((tab) => {
-    const validUrl = transformToValidUrl(tab.url); // Transform normalized URL to valid form
+  Object.values(filteredTabs).forEach((url) => {
+    const validUrl = transformToValidUrl(url); // Transform normalized URL to valid form
 
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
@@ -123,9 +121,8 @@ async function closeFilteredTabs(userId, filteredTabs) {
     });
   });
 
-  console.log(`Sent closeTab messages for ${filteredTabs.length} tabs for user ${userId}.`);
+  console.log(`Sent closeTab messages for ${Object.keys(filteredTabs).length} tabs for user ${userId}.`);
 }
-
 module.exports = {
   handleMonitor,
   handleCloseTab,
