@@ -1,5 +1,6 @@
 const db = require('./db');
 const WebSocket = require('ws');
+const { transformToValidUrl } = require('./helpers');
 
 // Function to determine if a new entry should be created based on the date
 function shouldCreateNewEntry(lastDate) {
@@ -82,8 +83,6 @@ function handleCloseTab(req, res) {
   });
 }
 
-
-
 // Handler for /tabData endpoint
 async function handleGetTabData(req, res) {
   try {
@@ -102,9 +101,62 @@ async function fetchLiveTabs(userOpenTabs) {
   return userOpenTabs;
 }
 
+// Function to close all live tabs for a specific user
+async function closeAllLiveTabs(userId, req) {
+  const userOpenTabs = req.app.get('userOpenTabs');
+
+  // Verify if the user has any open tabs
+  if (!userOpenTabs[userId] || Object.keys(userOpenTabs[userId]).length === 0) {
+    console.log(`No open tabs found for userId=${userId}`);
+    return { status: 'success', message: `No open tabs found for userId=${userId}` };
+  }
+
+  try {
+    // Fetch live tabs that are currently open for the user
+    const liveTabs = await fetchLiveTabs(userOpenTabs[userId]);
+
+    // Transform URLs to valid form
+    const validLiveTabs = Object.fromEntries(
+      Object.entries(liveTabs).map(([tabId, url]) => {
+        const validUrl = transformToValidUrl(url);
+        return [tabId, validUrl];
+      })
+    );
+
+    console.log('Valid Live Tabs:', validLiveTabs); // Log to debug
+
+    // Send close commands to WebSocket clients
+    const wss = req.app.get('wss');
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        Object.entries(validLiveTabs).forEach(([tabId, validUrl]) => {
+          console.log(`Sending close command: ${validUrl} for userId=${userId}`); // Log to debug
+          client.send(
+            JSON.stringify({
+              type: 'closeTab',
+              url: validUrl,
+              userId: userId,
+            })
+          );
+        });
+      }
+    });
+
+    return {
+      status: 'success',
+      message: `Request to close all tabs sent for userId=${userId}.`,
+      tabs: validLiveTabs,
+    };
+  } catch (err) {
+    console.error('Error closing all tabs:', err);
+    return { status: 'error', message: 'Internal server error' };
+  }
+}
+
 module.exports = {
   handleMonitor,
   handleCloseTab,
   handleGetTabData,
   fetchLiveTabs,
+  closeAllLiveTabs, // Export the new function
 };

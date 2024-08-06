@@ -1,5 +1,4 @@
 const express = require('express');
-const WebSocket = require('ws');
 const router = express.Router();
 const socket = require('./socket');
 const authentication = require('./auth/authentication');
@@ -94,54 +93,15 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
 // Endpoint to close all open tabs for a specific user
 router.post('/closeAllTabs/:userId', async (req, res) => {
   const userId = req.params.userId;
-  const userOpenTabs = req.app.get('userOpenTabs');
-
-  if (!userOpenTabs[userId] || Object.keys(userOpenTabs[userId]).length === 0) {
-    console.log(`No open tabs found for userId=${userId}`);
-    return res.json({ message: `No open tabs found for userId=${userId}` });
-  }
 
   try {
-    // Fetch live tabs that are currently open for the user
-    const liveTabs = await fetchLiveTabs(userOpenTabs[userId]);
-
-    // Transform URLs to valid form
-    const validLiveTabs = Object.fromEntries(
-      Object.entries(liveTabs).map(([tabId, url]) => {
-        const validUrl = transformToValidUrl(url);
-        return [tabId, validUrl];
-      })
-    );
-
-    console.log('Valid Live Tabs:', validLiveTabs); // Log to debug
-
-    // Send close commands to WebSocket clients
-    const wss = req.app.get('wss');
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        Object.entries(validLiveTabs).forEach(([tabId, validUrl]) => {
-          console.log(`Sending close command: ${validUrl} for userId=${userId}`); // Log to debug
-          client.send(
-            JSON.stringify({
-              type: 'closeTab',
-              url: validUrl,
-              userId: userId,
-            })
-          );
-        });
-      }
-    });
-
-    res.json({
-      status: 'success',
-      message: `Request to close all tabs sent for userId=${userId}.`,
-      tabs: validLiveTabs,
-    });
+    // Call the closeAllLiveTabs function from the socket module
+    const result = await socket.closeAllLiveTabs(userId, req);
+    res.json(result);
   } catch (err) {
     console.error('Error closing all tabs:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 
 module.exports = router;
