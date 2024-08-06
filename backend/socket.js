@@ -102,61 +102,61 @@ async function fetchLiveTabs(userOpenTabs) {
 }
 
 // Function to close all live tabs for a specific user
-async function closeAllLiveTabs(userId, req) {
-  const userOpenTabs = req.app.get('userOpenTabs');
+// Function to close all filtered tabs
+async function closeFilteredTabs(userId, filteredTabs) {
+  const wss = app.get('wss');
 
-  // Verify if the user has any open tabs
-  if (!userOpenTabs[userId] || Object.keys(userOpenTabs[userId]).length === 0) {
-    console.log(`No open tabs found for userId=${userId}`);
-    return { status: 'success', message: `No open tabs found for userId=${userId}` };
+  // Send a closeTab message for each filtered tab
+  filteredTabs.forEach((tab) => {
+    const validUrl = transformToValidUrl(tab.url); // Transform normalized URL to valid form
+
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(
+          JSON.stringify({
+            type: 'closeTab',
+            url: validUrl, // Send the valid URL
+            userId: userId,
+          })
+        );
+      }
+    });
+  });
+
+  console.log(`Sent closeTab messages for ${filteredTabs.length} tabs for user ${userId}.`);
+}
+
+// API endpoint to fetch live tabs and close filtered tabs
+app.post('/closeFilteredTabs', async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
   }
 
   try {
-    // Fetch live tabs that are currently open for the user
-    const liveTabs = await fetchLiveTabs(userOpenTabs[userId]);
+    // Fetch live open tabs
+    const userOpenTabs = await fetchLiveTabs(userId);
 
-    // Transform URLs to valid form
-    const validLiveTabs = Object.fromEntries(
-      Object.entries(liveTabs).map(([tabId, url]) => {
-        const validUrl = transformToValidUrl(url);
-        return [tabId, validUrl];
-      })
-    );
+    // Filter tabs based on your criteria (you need to implement this function)
+    const filteredTabs = filterTabs(userOpenTabs); // Implement your filtering logic here
 
-    console.log('Valid Live Tabs:', validLiveTabs); // Log to debug
+    // Close filtered tabs
+    await closeFilteredTabs(userId, filteredTabs);
 
-    // Send close commands to WebSocket clients
-    const wss = req.app.get('wss');
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        Object.entries(validLiveTabs).forEach(([tabId, validUrl]) => {
-          console.log(`Sending close command: ${validUrl} for userId=${userId}`); // Log to debug
-          client.send(
-            JSON.stringify({
-              type: 'closeTab',
-              url: validUrl,
-              userId: userId,
-            })
-          );
-        });
-      }
-    });
-
-    return {
+    res.json({
       status: 'success',
-      message: `Request to close all tabs sent for userId=${userId}.`,
-      tabs: validLiveTabs,
-    };
-  } catch (err) {
-    console.error('Error closing all tabs:', err);
-    return { status: 'error', message: 'Internal server error' };
+      message: `Requested to close ${filteredTabs.length} tabs for user ${userId}.`,
+    });
+  } catch (error) {
+    console.error('Error closing filtered tabs:', error);
+    res.status(500).json({ error: 'Failed to close filtered tabs' });
   }
-}
+});
 
 module.exports = {
   handleMonitor,
   handleCloseTab,
   handleGetTabData,
   fetchLiveTabs,
-  closeAllLiveTabs, // Export the new function
 };
