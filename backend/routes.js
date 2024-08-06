@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const socket = require('./socket');
 const authentication = require('./auth/authentication');
-const { fetchLiveTabs, transformToValidUrl } = require('./helpers'); // Import the new function
+const { fetchLiveTabs, transformToValidUrl, filterTabs } = require('./helpers'); // Import the new function
 
 // Existing endpoints
 router.post('/monitor', socket.handleMonitor);
@@ -104,7 +104,7 @@ router.post('/closeAllTabs/:userId', async (req, res) => {
   }
 });
 
-
+// Endpoint to close filtered tabs for a specific user
 router.post('/closeFilteredTabs', async (req, res) => {
   const { userId } = req.body;
 
@@ -116,11 +116,11 @@ router.post('/closeFilteredTabs', async (req, res) => {
     // Fetch live open tabs
     const userOpenTabs = await fetchLiveTabs(userId);
 
-    // Filter tabs based on your criteria (you need to implement this function)
-    const filteredTabs = filterTabs(userOpenTabs); // Implement your filtering logic here
+    // Filter tabs based on your criteria
+    const filteredTabs = filterTabs(userOpenTabs);
 
     // Close filtered tabs
-    await closeFilteredTabs(userId, filteredTabs);
+    await socket.closeFilteredTabs(userId, filteredTabs, req.app.get('wss'));
 
     res.json({
       status: 'success',

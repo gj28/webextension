@@ -131,4 +131,5 @@ module.exports = {
   handleCloseTab,
   handleGetTabData,
   fetchLiveTabs,
+  closeFilteredTabs
 };
