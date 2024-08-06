@@ -3,7 +3,7 @@ const WebSocket = require('ws');
 const router = express.Router();
 const socket = require('./socket');
 const authentication = require('./auth/authentication');
-const { fetchLiveTabs } = require('./helpers'); // Import fetchLiveTabs
+const { fetchLiveTabs, transformToValidUrl } = require('./helpers'); // Import the new function
 
 // Existing endpoints
 router.post('/monitor', socket.handleMonitor);
@@ -48,10 +48,11 @@ router.post('/closeLiveTabs/:userId', async (req, res) => {
     // Close each tab for the specified user
     const wss = req.app.get('wss');
     for (const url of Object.values(liveTabs)) {
+      const validUrl = transformToValidUrl(url); // Transform the URL to a valid form
       wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
           client.send(
-            JSON.stringify({ type: 'closeTab', url: url, userId: userId })
+            JSON.stringify({ type: 'closeTab', url: validUrl, userId: userId })
           );
         }
       });

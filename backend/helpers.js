@@ -1,6 +1,8 @@
-const db = require('./db'); // Make sure your database connection is imported
+// helpers.js
 
-// Function to normalize URLs
+const db = require('./db'); // Ensure the database connection is imported
+
+// Function to normalize URLs by removing the scheme, 'www.', trailing slashes, and spaces
 function normalizeUrl(url) {
   if (!url) return url;
   // Remove the scheme (http, https)
@@ -12,6 +14,13 @@ function normalizeUrl(url) {
   // Remove leading and trailing spaces
   url = url.trim();
   return url;
+}
+
+// Function to transform normalized URLs back to valid URLs
+function transformToValidUrl(url, scheme = 'https') {
+  if (!url) return url;
+  // Add the scheme back to the URL
+  return `${scheme}://${url}`;
 }
 
 // Function to fetch live open tabs data
@@ -37,7 +46,7 @@ async function fetchLiveTabs(userOpenTabs) {
     for (const [tabId, url] of Object.entries(userOpenTabs)) {
       const normalizedUrl = normalizeUrl(url);
       console.log(
-        `Tab ID: ${tabId}, Original URL: ${url}, Normalized URL:${normalizedUrl}`
+        `Tab ID: ${tabId}, Original URL: ${url}, Normalized URL: ${normalizedUrl}`
       );
       if (existingUrls.includes(normalizedUrl)) {
         filteredTabs[tabId] = url;
@@ -54,5 +63,6 @@ async function fetchLiveTabs(userOpenTabs) {
 
 module.exports = {
   normalizeUrl,
+  transformToValidUrl, // Export the new function
   fetchLiveTabs,
 };
