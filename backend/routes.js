@@ -11,7 +11,7 @@ router.post('/closeTab', socket.handleCloseTab);
 router.get('/tabData', socket.handleGetTabData);
 router.post('/login', authentication.login);
 router.get('/user', authentication.user);
-router.post('/closeAllTabs/:userId', socket.handleCloseAllTabs);
+
 // Endpoint to fetch live open tabs data for a specific user
 router.get('/liveTabs/:userId', async (req, res) => {
   const userId = req.params.userId;

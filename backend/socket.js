@@ -82,34 +82,6 @@ function handleCloseTab(req, res) {
   });
 }
 
-// Handler for /closeAllTabs endpoint
-async function handleCloseAllTabs(req, res) {
-  const { userId } = req.params; // Extract userId from URL params
-
-  if (!userId) {
-    return res.status(400).json({ error: 'User ID is required' });
-  }
-
-  // Broadcast the message to all connected WebSocket clients for the specific user
-  const wss = req.app.get('wss');
-  
-  // Send a message to all WebSocket clients to close all tabs
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(
-        JSON.stringify({
-          type: 'closeAllTabs',
-          userId: userId,
-        })
-      );
-    }
-  });
-
-  res.json({
-    status: 'success',
-    message: `Request to close all tabs for user ID ${userId} sent.`,
-  });
-}
 
 
 // Handler for /tabData endpoint
@@ -135,5 +107,4 @@ module.exports = {
   handleCloseTab,
   handleGetTabData,
   fetchLiveTabs,
-  handleCloseAllTabs
 };
