@@ -1,3 +1,5 @@
+// app.js
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -5,7 +7,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const routes = require('./routes');
 const cors = require('cors');
-const { normalizeUrl } = require('./helpers'); // Import normalizeUrl function
+const { normalizeUrl, transformToValidUrl } = require('./helpers');
 
 const app = express();
 const port = 5000;
@@ -81,10 +83,16 @@ wss.on('connection', (ws, req) => {
 
 // Function to broadcast the list of open tabs to all clients for a specific user
 function broadcastOpenTabs(userId) {
+  const wss = app.get('wss');
+  const tabs = Object.entries(userOpenTabs[userId]).reduce((acc, [tabId, url]) => {
+    acc[tabId] = transformToValidUrl(url); // Ensure URLs are in valid form
+    return acc;
+  }, {});
+
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(
-        JSON.stringify({ type: 'openTabs', tabs: userOpenTabs[userId] })
+        JSON.stringify({ type: 'openTabs', tabs })
       );
     }
   });
