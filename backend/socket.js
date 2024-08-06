@@ -126,34 +126,6 @@ async function closeFilteredTabs(userId, filteredTabs) {
   console.log(`Sent closeTab messages for ${filteredTabs.length} tabs for user ${userId}.`);
 }
 
-// API endpoint to fetch live tabs and close filtered tabs
-app.post('/closeFilteredTabs', async (req, res) => {
-  const { userId } = req.body;
-
-  if (!userId) {
-    return res.status(400).json({ error: 'User ID is required' });
-  }
-
-  try {
-    // Fetch live open tabs
-    const userOpenTabs = await fetchLiveTabs(userId);
-
-    // Filter tabs based on your criteria (you need to implement this function)
-    const filteredTabs = filterTabs(userOpenTabs); // Implement your filtering logic here
-
-    // Close filtered tabs
-    await closeFilteredTabs(userId, filteredTabs);
-
-    res.json({
-      status: 'success',
-      message: `Requested to close ${filteredTabs.length} tabs for user ${userId}.`,
-    });
-  } catch (error) {
-    console.error('Error closing filtered tabs:', error);
-    res.status(500).json({ error: 'Failed to close filtered tabs' });
-  }
-});
-
 module.exports = {
   handleMonitor,
   handleCloseTab,
