@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const socket = require('./socket');
+const WebSocket = require('ws');
 const authentication = require('./auth/authentication');
 const { fetchLiveTabs, transformToValidUrl, filterTabs } = require('./helpers'); // Import the filterTabs function
 
