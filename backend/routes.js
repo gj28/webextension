@@ -13,6 +13,7 @@ router.post('/login', authentication.login);
 router.get('/user', authentication.user);
 
 // Endpoint to fetch live open tabs data for a specific user
+// Endpoint to fetch live open tabs data for a specific user
 router.get('/liveTabs/:userId', async (req, res) => {
   const userId = req.params.userId;
   const userOpenTabs = req.app.get('userOpenTabs');
@@ -25,12 +26,16 @@ router.get('/liveTabs/:userId', async (req, res) => {
   try {
     // Normalize and fetch tabs
     const liveTabs = await fetchLiveTabs(userOpenTabs[userId]);
+    if (Object.keys(liveTabs).length === 0) {
+      return res.json({ message: `No open tabs found for userId=${userId}` });
+    }
     res.json(liveTabs);
   } catch (err) {
     console.error('Error fetching live tabs:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // Endpoint to close live tabs for a specific user
 router.post('/closeLiveTabs/:userId', async (req, res) => {

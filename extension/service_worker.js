@@ -5,22 +5,17 @@ let tabData = {
 
 // Function to reset counts after 24 hours
 function resetCountsAfter24Hours() {
-  const storageKey = 'fileScanData';
   const now = new Date();
 
-  // Retrieve last reset date from storage
   chrome.storage.local.get(['fileScanData', 'lastResetDate'], (result) => {
     const lastReset = result.lastResetDate;
 
-    // Check if 24 hours have passed since last reset
     if (!lastReset || now - new Date(lastReset) >= 24 * 60 * 60 * 1000) {
-      // Reset counts and update last reset date
       tabData = { scannedFiles: 0, problemFiles: 0 };
       chrome.storage.local.set({ fileScanData: tabData, lastResetDate: now.toISOString() }, () => {
         console.log('Counts reset after 24 hours.');
       });
     } else {
-      // If counts exist in storage, use them
       tabData = result.fileScanData || tabData;
     }
   });
@@ -32,18 +27,17 @@ function scanFiles() {
   let problemFiles = 0;
 
   const suspiciousPatterns = [
-    /<script[^>]*>.*<\/script>/gi, // Inline scripts
-    /src\s*=\s*['"]https?:\/\/[^'"]*['"]/gi, // External script sources
-    /eval\s*\(/gi, // Usage of eval
-    /document\.write\s*\(/gi, // Usage of document.write
-    /javascript\s*:/gi, // JavaScript URIs
+    /<script[^>]*>.*<\/script>/gi,
+    /src\s*=\s*['"]https?:\/\/[^'"]*['"]/gi,
+    /eval\s*\(/gi,
+    /document\.write\s*\(/gi,
+    /javascript\s*:/gi,
   ];
 
   function isSuspicious(content) {
     return suspiciousPatterns.some((pattern) => pattern.test(content));
   }
 
-  // Function to fetch and scan the content of a file
   function fetchAndScan(url) {
     return fetch(url)
       .then((response) => response.text())
@@ -58,13 +52,11 @@ function scanFiles() {
       });
   }
 
-  // Scan each resource file for suspicious content
   const resourcePromises = performance
     .getEntriesByType('resource')
     .filter((resource) => resource.initiatorType === 'script' || resource.initiatorType === 'link')
     .map((resource) => fetchAndScan(resource.name));
 
-  // Wait for all resource scans to complete
   return Promise.all(resourcePromises).then(() => {
     return {
       totalFilesScanned,
@@ -75,13 +67,10 @@ function scanFiles() {
 
 // Function to update tabData and send to backend
 function updateTabData(fileScanResults, tabUrl) {
-  // Update tabData object with new counts
   tabData.scannedFiles += fileScanResults.totalFilesScanned;
   tabData.problemFiles += fileScanResults.problemFiles;
 
-  // Store current counts in storage
   chrome.storage.local.set({ fileScanData: tabData }, () => {
-    // Create a new entry with date, counts, and URL
     const dataEntry = {
       date: new Date().toISOString(),
       url: tabUrl,
@@ -89,7 +78,6 @@ function updateTabData(fileScanResults, tabUrl) {
       problemFiles: tabData.problemFiles,
     };
 
-    // Send data to backend server
     chrome.storage.local.get('userId', (result) => {
       const userId = result.userId;
       if (userId) {
@@ -112,9 +100,8 @@ function updateTabData(fileScanResults, tabUrl) {
 function initializeWebSocket(userId) {
   const socket = new WebSocket(`wss://webextension-8p1b.onrender.com/socket?userId=${userId}`);
 
-  socket.addEventListener('open', (event) => {
+  socket.addEventListener('open', () => {
     console.log('WebSocket connection established');
-    // Send ping messages every 30 seconds to keep the connection alive
     setInterval(() => {
       socket.send(JSON.stringify({ type: 'ping' }));
     }, 30000);
@@ -123,17 +110,33 @@ function initializeWebSocket(userId) {
   socket.addEventListener('message', (event) => {
     const message = JSON.parse(event.data);
     if (message.type === 'closeTab' && message.url) {
-      chrome.tabs.query({ url: message.url }, (tabs) => {
+      const urlPattern = new URL(message.url);
+      
+      chrome.tabs.query({ url: `${urlPattern.origin}/*` }, (tabs) => {
+        if (chrome.runtime.lastError) {
+          console.error(`Error querying tabs: ${chrome.runtime.lastError.message}`);
+          return;
+        }
+
+        if (!tabs || tabs.length === 0) {
+          console.warn(`No tabs found matching URL pattern: ${urlPattern.origin}/*`);
+          return;
+        }
+
         tabs.forEach((tab) => {
           chrome.tabs.remove(tab.id, () => {
-            console.log(`Closed tab with URL: ${message.url}`);
+            if (chrome.runtime.lastError) {
+              console.error(`Error closing tab: ${chrome.runtime.lastError.message}`);
+            } else {
+              console.log(`Closed tab with URL: ${message.url}`);
+            }
           });
         });
       });
     }
   });
 
-  socket.addEventListener('close', (event) => {
+  socket.addEventListener('close', () => {
     console.log('WebSocket connection closed');
   });
 
@@ -153,7 +156,6 @@ function handleTabUpdates(socket) {
         updateTabData(fileScanResults, tab.url);
       });
 
-      // Notify the backend that a tab has been opened
       chrome.storage.local.get('userId', (result) => {
         const userId = result.userId;
         if (userId) {
@@ -168,13 +170,23 @@ function handleTabUpdates(socket) {
 chrome.runtime.onInstalled.addListener(() => {
   resetCountsAfter24Hours();
 
-  // Check if user is logged in
   chrome.storage.local.get(['loggedIn', 'userId'], (result) => {
     if (result.loggedIn && result.userId) {
-      // Initialize WebSocket connection
       const socket = initializeWebSocket(result.userId);
+      handleTabUpdates(socket);
+    } else {
+      console.log('User is not logged in.');
+    }
+  });
+});
 
-      // Handle tab updates
+// Listen for browser startup
+chrome.runtime.onStartup.addListener(() => {
+  resetCountsAfter24Hours();
+
+  chrome.storage.local.get(['loggedIn', 'userId'], (result) => {
+    if (result.loggedIn && result.userId) {
+      const socket = initializeWebSocket(result.userId);
       handleTabUpdates(socket);
     } else {
       console.log('User is not logged in.');
@@ -185,10 +197,7 @@ chrome.runtime.onInstalled.addListener(() => {
 // Listen for login event to initialize WebSocket and handle tabs
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'login' && message.userId) {
-    // Initialize WebSocket connection
     const socket = initializeWebSocket(message.userId);
-
-    // Handle tab updates
     handleTabUpdates(socket);
   }
 });
