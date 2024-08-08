@@ -1,3 +1,5 @@
+
+
 let tabData = {
   scannedFiles: 0,
   problemFiles: 0,
@@ -183,3 +185,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleTabUpdates(socket);
   }
 });
+
+
+
