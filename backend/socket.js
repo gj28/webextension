@@ -55,22 +55,27 @@ async function handleMonitor(req, res) {
 // Handler for /closeTab endpoint
 function handleCloseTab(req, res) {
   const { userId } = req.params; // Extract userId from URL params
-  const { url } = req.body; // Extract url from request body
+  const { tabId } = req.body; // Extract tabId from request body
 
-  if (!url || !userId) {
-    return res.status(400).json({ error: 'URL and user ID are required' });
+  if (!tabId || !userId) {
+    return res.status(400).json({ error: 'Tab ID and user ID are required' });
+  }
+
+  const wss = req.app.get('wss');
+  const userOpenTabs = req.app.get('userOpenTabs');
+
+  // Remove tab from userOpenTabs
+  if (userOpenTabs[userId] && userOpenTabs[userId][tabId]) {
+    delete userOpenTabs[userId][tabId];
   }
 
   // Broadcast the message to all connected WebSocket clients for the specific user
-  const wss = req.app.get('wss');
-  const validUrl = transformToValidUrl(url); // Transform normalized URL to valid form
-
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(
         JSON.stringify({
           type: 'closeTab',
-          url: validUrl, // Send the valid URL
+          tabId: tabId,
           userId: userId,
         })
       );
@@ -79,7 +84,7 @@ function handleCloseTab(req, res) {
 
   res.json({
     status: 'success',
-    message: `Request to close tab with URL ${validUrl} and user ID ${userId} sent.`,
+    message: `Request to close tab with ID ${tabId} and user ID ${userId} sent.`,
   });
 }
 
@@ -98,7 +103,7 @@ async function handleGetTabData(req, res) {
 async function fetchLiveTabs(userOpenTabs) {
   // Directly return userOpenTabs without filtering against the database
   console.log('Fetched live tabs:', userOpenTabs);
-  return userOpenTabs;
+  return userOpenTabs; // Return as is to reflect currently open tabs
 }
 
 // Function to close all live tabs for a specific user
@@ -123,6 +128,7 @@ async function closeFilteredTabs(userId, filteredTabs, wss) {
 
   console.log(`Sent closeTab messages for ${Object.keys(filteredTabs).length} tabs for user ${userId}.`);
 }
+
 module.exports = {
   handleMonitor,
   handleCloseTab,

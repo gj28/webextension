@@ -81,7 +81,6 @@ wss.on('connection', (ws, req) => {
 
 // Function to broadcast the list of open tabs to all clients for a specific user
 function broadcastOpenTabs(userId) {
-  const wss = app.get('wss');
   const tabs = Object.entries(userOpenTabs[userId]).reduce((acc, [tabId, url]) => {
     acc[tabId] = transformToValidUrl(url); // Ensure URLs are in valid form
     return acc;
