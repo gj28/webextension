@@ -111,7 +111,7 @@ function initializeWebSocket(userId) {
     const message = JSON.parse(event.data);
     if (message.type === 'closeTab' && message.url) {
       const urlPattern = new URL(message.url);
-      
+
       chrome.tabs.query({ url: `${urlPattern.origin}/*` }, (tabs) => {
         if (chrome.runtime.lastError) {
           console.error(`Error querying tabs: ${chrome.runtime.lastError.message}`);
@@ -163,6 +163,16 @@ function handleTabUpdates(socket) {
         }
       });
     }
+  });
+
+  // Listen for tab removal events
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    chrome.storage.local.get('userId', (result) => {
+      const userId = result.userId;
+      if (userId) {
+        socket.send(JSON.stringify({ type: 'closeTab', tabId }));
+      }
+    });
   });
 }
 

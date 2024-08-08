@@ -5,7 +5,6 @@ const http = require('http');
 const WebSocket = require('ws');
 const routes = require('./routes');
 const cors = require('cors');
-const { normalizeUrl, transformToValidUrl } = require('./helpers');
 
 const app = express();
 const port = 5000;
@@ -51,7 +50,7 @@ wss.on('connection', (ws, req) => {
 
     switch (type) {
       case 'openTab':
-        const normalizedUrl = normalizeUrl(url);
+        const normalizedUrl = new URL(url).origin; // Store only the origin
         userOpenTabs[userId][tabId] = normalizedUrl; // Store the normalized URL
         broadcastOpenTabs(userId);
         break;
@@ -60,10 +59,7 @@ wss.on('connection', (ws, req) => {
         broadcastOpenTabs(userId);
         break;
       default:
-        console.log(
-          `Unknown message type received from userId=${userId}:`,
-          message
-        );
+        console.log(`Unknown message type received from userId=${userId}:`, message);
     }
   });
 
@@ -81,10 +77,9 @@ wss.on('connection', (ws, req) => {
 
 // Function to broadcast the list of open tabs to all clients for a specific user
 function broadcastOpenTabs(userId) {
-  const tabs = Object.entries(userOpenTabs[userId]).reduce((acc, [tabId, url]) => {
-    acc[tabId] = transformToValidUrl(url); // Ensure URLs are in valid form
-    return acc;
-  }, {});
+  const tabs = Object.fromEntries(
+    Object.entries(userOpenTabs[userId]).map(([tabId, url]) => [tabId, url])
+  );
 
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {

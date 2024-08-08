@@ -55,27 +55,22 @@ async function handleMonitor(req, res) {
 // Handler for /closeTab endpoint
 function handleCloseTab(req, res) {
   const { userId } = req.params; // Extract userId from URL params
-  const { tabId } = req.body; // Extract tabId from request body
+  const { url } = req.body; // Extract url from request body
 
-  if (!tabId || !userId) {
-    return res.status(400).json({ error: 'Tab ID and user ID are required' });
-  }
-
-  const wss = req.app.get('wss');
-  const userOpenTabs = req.app.get('userOpenTabs');
-
-  // Remove tab from userOpenTabs
-  if (userOpenTabs[userId] && userOpenTabs[userId][tabId]) {
-    delete userOpenTabs[userId][tabId];
+  if (!url || !userId) {
+    return res.status(400).json({ error: 'URL and user ID are required' });
   }
 
   // Broadcast the message to all connected WebSocket clients for the specific user
+  const wss = req.app.get('wss');
+  const validUrl = transformToValidUrl(url); // Transform normalized URL to valid form
+
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(
         JSON.stringify({
           type: 'closeTab',
-          tabId: tabId,
+          url: validUrl, // Send the valid URL
           userId: userId,
         })
       );
@@ -84,7 +79,7 @@ function handleCloseTab(req, res) {
 
   res.json({
     status: 'success',
-    message: `Request to close tab with ID ${tabId} and user ID ${userId} sent.`,
+    message: `Request to close tab with URL ${validUrl} and user ID ${userId} sent.`,
   });
 }
 
@@ -103,7 +98,7 @@ async function handleGetTabData(req, res) {
 async function fetchLiveTabs(userOpenTabs) {
   // Directly return userOpenTabs without filtering against the database
   console.log('Fetched live tabs:', userOpenTabs);
-  return userOpenTabs; // Return as is to reflect currently open tabs
+  return userOpenTabs;
 }
 
 // Function to close all live tabs for a specific user
