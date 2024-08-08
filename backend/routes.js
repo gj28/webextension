@@ -7,7 +7,7 @@ const { fetchLiveTabs, transformToValidUrl, filterTabs } = require('./helpers');
 
 // Existing endpoints
 router.post('/monitor', socket.handleMonitor);
-router.post('/closeTab', socket.handleCloseTab);
+router.post('/closeTab/:userId', socket.handleCloseTab);
 router.get('/tabData', socket.handleGetTabData);
 router.post('/login', authentication.login);
 router.get('/user', authentication.user);
