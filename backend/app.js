@@ -65,6 +65,9 @@ wss.on('connection', (ws, req) => {
 
   ws.on('close', () => {
     console.log(`WebSocket connection closed for userId=${userId}`);
+    // Remove all tabs for the user when the connection is closed
+    delete userOpenTabs[userId];
+    broadcastOpenTabs(userId);
   });
 
   ws.on('error', (error) => {
@@ -78,13 +81,13 @@ wss.on('connection', (ws, req) => {
 // Function to broadcast the list of open tabs to all clients for a specific user
 function broadcastOpenTabs(userId) {
   const tabs = Object.fromEntries(
-    Object.entries(userOpenTabs[userId]).map(([tabId, url]) => [tabId, url])
+    Object.entries(userOpenTabs[userId] || {}).map(([tabId, url]) => [tabId, url])
   );
 
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(
-        JSON.stringify({ type: 'openTabs', tabs })
+        JSON.stringify({ type: 'openTabs', userId, tabs })
       );
     }
   });
