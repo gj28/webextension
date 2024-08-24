@@ -158,7 +158,7 @@ function getUsers(req, res) {
     const { Username, Password } = req.body;
   
     // Check if the user exists in the database
-    const query = 'SELECT * FROM data.users WHERE personalemail = $1';
+    const query = 'SELECT * FROM hr.users WHERE personalemail = $1';
     db.query(query, [Username], (error, result) => {
       try {
         if (error) {
@@ -254,7 +254,7 @@ function getUsers(req, res) {
             return res.status(401).json({ message: 'Invalid token' });
         }
 
-        const getUserDetailsQuery = `SELECT * FROM data.users WHERE personalemail = $1`;
+        const getUserDetailsQuery = `SELECT * FROM hr.users WHERE personalemail = $1`;
         console.log("Executing query:", getUserDetailsQuery);
         db.query(getUserDetailsQuery, [decodedToken.personalemail], (fetchUserError, fetchUsernameResult) => {
             if (fetchUserError) {
