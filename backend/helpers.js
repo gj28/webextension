@@ -26,7 +26,7 @@ function transformToValidUrl(normalizedUrl) {
 async function fetchLiveTabs(userOpenTabs) {
   // Normalize the URLs from userOpenTabs
   const urls = Object.values(userOpenTabs).map(normalizeUrl);
-  const query = 'SELECT url FROM "data".aiurl WHERE url = ANY($1::text[])';
+  const query = 'SELECT url FROM "hr".aiurl WHERE url = ANY($1::text[])';
 
   try {
     console.log('Fetching live tabs, input URLs:', urls);

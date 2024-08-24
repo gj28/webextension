@@ -25,7 +25,7 @@ async function handleMonitor(req, res) {
   try {
     // Find existing entry for the current URL
     const { rows } = await db.query(
-      'SELECT * FROM data.tab_data WHERE url = $1 AND user_id = $2 ORDER BY date DESC LIMIT 1',
+      'SELECT * FROM hr.tab_data WHERE url = $1 AND user_id = $2 ORDER BY date DESC LIMIT 1',
       [url, userId]
     );
     let foundEntry = rows[0];
@@ -33,13 +33,13 @@ async function handleMonitor(req, res) {
     if (!foundEntry || shouldCreateNewEntry(foundEntry.date)) {
       // Create new entry
       await db.query(
-        'INSERT INTO data.tab_data (date, url, scanned_files, problem_files, user_id) VALUES ($1, $2, $3, $4, $5)',
+        'INSERT INTO hr.tab_data (date, url, scanned_files, problem_files, user_id) VALUES ($1, $2, $3, $4, $5)',
         [date, url, scannedFiles, problemFiles, userId]
       );
     } else {
       // Update existing entry with incremented values
       await db.query(
-        'UPDATE data.tab_data SET scanned_files = scanned_files + $1, problem_files = problem_files + $2 WHERE id = $3',
+        'UPDATE hr.tab_data SET scanned_files = scanned_files + $1, problem_files = problem_files + $2 WHERE id = $3',
         [scannedFiles, problemFiles, foundEntry.id]
       );
     }
@@ -86,7 +86,7 @@ function handleCloseTab(req, res) {
 // Handler for /tabData endpoint
 async function handleGetTabData(req, res) {
   try {
-    const { rows } = await db.query('SELECT * FROM data.tab_data');
+    const { rows } = await db.query('SELECT * FROM hr.tab_data');
     res.json(rows);
   } catch (error) {
     console.error('Error reading from database:', error);
