@@ -3,11 +3,11 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
-const routes = require('./routes');
+const routes = require('./routes'); // Assuming your routes file is set up correctly
 const cors = require('cors');
 
 const app = express();
-const port = 5000;
+const port = 6000;
 
 // Middleware
 app.use(bodyParser.json());
@@ -99,8 +99,8 @@ app.set('userOpenTabs', userOpenTabs);
 // Pass WebSocket server to routes
 app.set('wss', wss);
 
-// Use routes
-app.use(routes);
+// Use routes with '/api' prefix
+app.use('/api', routes);
 
 // Start server
 server.listen(port, () => {
