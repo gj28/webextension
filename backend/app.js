@@ -100,7 +100,7 @@ app.set('userOpenTabs', userOpenTabs);
 app.set('wss', wss);
 
 // Use routes with '/api' prefix
-app.use('/api', routes);
+app.use('/apiii', routes);
 
 // Start server
 server.listen(port, () => {
