@@ -84,7 +84,7 @@ function updateTabData(fileScanResults, tabUrl) {
           userId,
         };
 
-        fetch('https://webextension-8p1b.onrender.com/monitor', {
+        fetch('https://aws.antiai.ltd/apiii/monitor', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ function updateTabData(fileScanResults, tabUrl) {
 
 // Function to initialize WebSocket connection
 function initializeWebSocket(userId) {
-  const socket = new WebSocket(`wss://webextension-8p1b.onrender.com/socket?userId=${userId}`);
+  const socket = new WebSocket(`wss://aws.antiai.ltd/socket?userId=${userId}`);
 
   socket.addEventListener('open', () => {
     console.log('WebSocket connection established');
